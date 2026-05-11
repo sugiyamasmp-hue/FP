@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FP Tools — ファイナンシャルプランニングツール集</title>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;500;600;700&family=Noto+Sans+JP:wght@300;400&family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy:    #0d1f2d;
+    --navy2:   #162636;
+    --gold:    #c9a84c;
+    --gold2:   #e8c97a;
+    --cream:   #f5f0e8;
+    --paper:   #faf8f4;
+    --mist:    #e8e2d6;
+    --slate:   #6b7e8f;
+    --ink:     #1a2530;
+    --shadow:  rgba(13,31,45,0.18);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--navy);
+    color: var(--cream);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ===== HERO ===== */
+  .hero {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 60px 24px 80px;
+    overflow: hidden;
+  }
+
+  /* 背景装飾 */
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 50% 30%, rgba(201,168,76,0.08) 0%, transparent 70%),
+      radial-gradient(ellipse 40% 40% at 80% 80%, rgba(201,168,76,0.05) 0%, transparent 60%);
+  }
+
+  .hero-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(201,168,76,0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(201,168,76,0.06) 1px, transparent 1px);
+    background-size: 60px 60px;
+    mask-image: radial-gradient(ellipse 80% 80% at 50% 40%, black 30%, transparent 80%);
+  }
+
+  .hero-deco {
+    position: absolute;
+    width: 500px; height: 500px;
+    border: 1px solid rgba(201,168,76,0.12);
+    border-radius: 50%;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    animation: rotateDeco 30s linear infinite;
+  }
+
+  .hero-deco::before {
+    content: '';
+    position: absolute;
+    inset: 30px;
+    border: 1px solid rgba(201,168,76,0.08);
+    border-radius: 50%;
+  }
+
+  @keyframes rotateDeco {
+    to { transform: translate(-50%, -50%) rotate(360deg); }
+  }
+
+  .hero-eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.25em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 24px;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.2s ease forwards;
+  }
+
+  .hero-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(3rem, 8vw, 6rem);
+    line-height: 1;
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.4s ease forwards;
+  }
+
+  .hero-title em {
+    font-style: italic;
+    color: var(--gold);
+  }
+
+  .hero-subtitle {
+    font-family: 'Shippori Mincho', serif;
+    font-size: clamp(1rem, 2.5vw, 1.3rem);
+    font-weight: 400;
+    letter-spacing: 0.2em;
+    color: var(--mist);
+    margin-top: 16px;
+    margin-bottom: 48px;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.6s ease forwards;
+  }
+
+  .hero-desc {
+    max-width: 480px;
+    font-size: 0.85rem;
+    line-height: 2;
+    color: var(--slate);
+    letter-spacing: 0.05em;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.8s ease forwards;
+    margin-bottom: 56px;
+  }
+
+  .scroll-cue {
+    position: absolute;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    opacity: 0;
+    animation: fadeUp 0.8s 1.2s ease forwards;
+  }
+
+  .scroll-cue span {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.2em;
+    color: var(--slate);
+    text-transform: uppercase;
+  }
+
+  .scroll-line {
+    width: 1px;
+    height: 40px;
+    background: linear-gradient(to bottom, var(--gold), transparent);
+    animation: scrollPulse 2s ease-in-out infinite;
+  }
+
+  @keyframes scrollPulse {
+    0%, 100% { opacity: 0.4; transform: scaleY(1); }
+    50% { opacity: 1; transform: scaleY(1.2); }
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ===== TOOLS SECTION ===== */
+  .tools-section {
+    background: var(--paper);
+    color: var(--ink);
+    padding: 80px 24px 100px;
+  }
+
+  .section-label {
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.25em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  .section-title {
+    text-align: center;
+    font-family: 'Shippori Mincho', serif;
+    font-size: clamp(1.4rem, 3vw, 2rem);
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    color: var(--navy);
+    margin-bottom: 64px;
+  }
+
+  .tools-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  /* ツールカード */
+  .tool-card {
+    background: white;
+    border: 1px solid var(--mist);
+    border-radius: 12px;
+    padding: 36px 32px 32px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    opacity: 0;
+    transform: translateY(24px);
+  }
+
+  .tool-card.visible {
+    animation: cardReveal 0.6s ease forwards;
+  }
+
+  @keyframes cardReveal {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .tool-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--gold), var(--gold2));
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s ease;
+  }
+
+  .tool-card:hover::before { transform: scaleX(1); }
+
+  .tool-card:hover {
+    box-shadow: 0 12px 40px var(--shadow);
+    transform: translateY(-4px);
+    border-color: rgba(201,168,76,0.3);
+  }
+
+  .tool-card.coming-soon {
+    opacity: 0.6 !important;
+    cursor: default;
+    pointer-events: none;
+  }
+
+  .card-icon {
+    width: 48px; height: 48px;
+    background: var(--navy);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+    font-size: 1.3rem;
+  }
+
+  .card-number {
+    position: absolute;
+    top: 28px; right: 28px;
+    font-family: 'DM Serif Display', serif;
+    font-size: 2.5rem;
+    color: var(--mist);
+    line-height: 1;
+    user-select: none;
+  }
+
+  .card-tag {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 2px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .tag-active  { background: #e8f4ec; color: #2a6c4a; }
+  .tag-coming  { background: #f0f0f0; color: #999; }
+
+  .card-name {
+    font-family: 'Shippori Mincho', serif;
+    font-size: 1.15rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    color: var(--navy);
+    margin-bottom: 10px;
+  }
+
+  .card-desc {
+    font-size: 0.78rem;
+    line-height: 1.9;
+    color: #888;
+    letter-spacing: 0.03em;
+  }
+
+  .card-tools {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--mist);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .tool-chip {
+    padding: 4px 10px;
+    background: var(--paper);
+    border: 1px solid var(--mist);
+    border-radius: 20px;
+    font-size: 0.68rem;
+    color: #777;
+    letter-spacing: 0.05em;
+  }
+
+  .card-arrow {
+    position: absolute;
+    bottom: 28px; right: 28px;
+    width: 32px; height: 32px;
+    border: 1px solid var(--mist);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--slate);
+    font-size: 0.9rem;
+    transition: all 0.3s;
+  }
+
+  .tool-card:hover .card-arrow {
+    background: var(--navy);
+    border-color: var(--navy);
+    color: var(--gold);
+  }
+
+  /* ===== FOOTER ===== */
+  .footer {
+    background: var(--navy2);
+    padding: 40px 24px;
+    text-align: center;
+    border-top: 1px solid rgba(201,168,76,0.15);
+  }
+
+  .footer-logo {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.4rem;
+    color: var(--gold);
+    margin-bottom: 8px;
+  }
+
+  .footer-text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    color: var(--slate);
+    text-transform: uppercase;
+  }
+
+  /* ===== OVERLAY PANEL ===== */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: none;
+    flex-direction: column;
+  }
+
+  .overlay.open { display: flex; }
+
+  .overlay-header {
+    background: var(--navy);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border-bottom: 1px solid rgba(201,168,76,0.2);
+    flex-shrink: 0;
+  }
+
+  .back-btn {
+    background: none;
+    border: 1px solid rgba(201,168,76,0.3);
+    color: var(--gold);
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .back-btn:hover {
+    background: rgba(201,168,76,0.1);
+  }
+
+  .overlay-title {
+    font-family: 'Shippori Mincho', serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--cream);
+    letter-spacing: 0.1em;
+  }
+
+  .overlay-frame {
+    flex: 1;
+    border: none;
+    background: white;
+  }
+
+  @media (max-width: 600px) {
+    .hero-title { font-size: 2.8rem; }
+    .tools-grid { grid-template-columns: 1fr; }
+    .card-number { font-size: 1.8rem; top: 20px; right: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== HERO ===== -->
+<section class="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-deco"></div>
+
+  <p class="hero-eyebrow">Financial Planning Tools</p>
+  <h1 class="hero-title">FP <em>Tools</em></h1>
+  <p class="hero-subtitle">ファイナンシャルプランニング計算ツール集</p>
+  <p class="hero-desc">
+    複利・年金・住宅ローン・資産形成など、<br>
+    お金の計算をわかりやすく、すぐに。<br>
+    一般の方からプロのFPまでご活用いただけます。
+  </p>
+
+  <div class="scroll-cue">
+    <span>Scroll</span>
+    <div class="scroll-line"></div>
+  </div>
+</section>
+
+<!-- ===== TOOLS ===== -->
+<section class="tools-section">
+  <p class="section-label">Tools</p>
+  <h2 class="section-title">計算ツール一覧</h2>
+
+  <div class="tools-grid">
+
+    <!-- 01 複利計算 -->
+    <a class="tool-card" onclick="openTool('fukuri-calc.html', '複利計算ツール'); return false;" href="#">
+      <div class="card-icon">📐</div>
+      <span class="card-number">01</span>
+      <span class="card-tag tag-active">利用可能</span>
+      <div class="card-name">複利計算ツール</div>
+      <div class="card-desc">
+        終価・現価・年金・減債基金・資本回収など、FPの6係数をすべてカバー。係数表も一覧で確認できます。
+      </div>
+      <div class="card-tools">
+        <span class="tool-chip">終価係数</span>
+        <span class="tool-chip">現価係数</span>
+        <span class="tool-chip">年金計算</span>
+        <span class="tool-chip">減債基金</span>
+        <span class="tool-chip">係数表</span>
+      </div>
+      <div style="height:32px;"></div>
+      <div class="card-arrow">→</div>
+    </a>
+
+    <!-- 02 住宅ローン -->
+    <a class="tool-card" onclick="openTool('housing-loan.html', '住宅ローン比較シミュレーター'); return false;" href="#">
+      <div class="card-icon">🏠</div>
+      <span class="card-number">02</span>
+      <span class="card-tag tag-active">利用可能</span>
+      <div class="card-name">住宅ローン比較</div>
+      <div class="card-desc">
+        固定vs変動の総支払額比較、繰り上げ返済の効果、借換えメリットの損益分岐点を試算。
+      </div>
+      <div class="card-tools">
+        <span class="tool-chip">固定/変動比較</span>
+        <span class="tool-chip">繰り上げ返済</span>
+        <span class="tool-chip">借換え試算</span>
+        <span class="tool-chip">返済スケジュール</span>
+      </div>
+      <div style="height:32px;"></div>
+      <div class="card-arrow">→</div>
+    </a>
+
+    <!-- 03 NISA・iDeCo -->
+    <a class="tool-card" onclick="openTool('nisa-ideco.html', 'NISA・iDeCo シミュレーター'); return false;" href="#">
+      <div class="card-icon">📈</div>
+      <span class="card-number">03</span>
+      <span class="card-tag tag-active">利用可能</span>
+      <div class="card-name">NISA・iDeCo シミュレーター</div>
+      <div class="card-desc">
+        非課税メリットを可視化。普通預金・課税口座・NISA・iDeCoの4パターンを横並びで比較します。
+      </div>
+      <div class="card-tools">
+        <span class="tool-chip">つみたてNISA</span>
+        <span class="tool-chip">成長投資枠</span>
+        <span class="tool-chip">iDeCo節税</span>
+        <span class="tool-chip">4パターン比較</span>
+      </div>
+      <div style="height:32px;"></div>
+      <div class="card-arrow">→</div>
+    </a>
+
+    <!-- 04 老後資金 -->
+    <a class="tool-card" onclick="openTool('retirement.html', '老後資金シミュレーター'); return false;" href="#">
+      <div class="card-icon">🌅</div>
+      <span class="card-number">04</span>
+      <span class="card-tag tag-active">利用可能</span>
+      <div class="card-name">老後資金シミュレーター</div>
+      <div class="card-desc">
+        現在の貯蓄・毎月の支出・年金受取額から、資産が何年で底をつくかをシミュレーション。
+      </div>
+      <div class="card-tools">
+        <span class="tool-chip">資産寿命</span>
+        <span class="tool-chip">2000万円問題</span>
+        <span class="tool-chip">年金試算</span>
+      </div>
+      <div style="height:32px;"></div>
+      <div class="card-arrow">→</div>
+    </a>
+
+    <!-- 05 生命保険 -->
+    <a class="tool-card" onclick="openTool('life-insurance.html', '生命保険 必要保障額シミュレーター'); return false;" href="#">
+      <div class="card-icon">🛡️</div>
+      <span class="card-number">05</span>
+      <span class="card-tag tag-active">利用可能</span>
+      <div class="card-name">生命保険 必要保障額</div>
+      <div class="card-desc">
+        収入・支出・子供の年齢などから、万が一の際に家族に必要な保障額を算出します。
+      </div>
+      <div class="card-tools">
+        <span class="tool-chip">必要保障額</span>
+        <span class="tool-chip">遺族年金</span>
+        <span class="tool-chip">保険種類ガイド</span>
+      </div>
+      <div style="height:32px;"></div>
+      <div class="card-arrow">→</div>
+    </a>
+
+  </div>
+
+  <!-- クレジット -->
+  <div style="text-align:center; margin-top:48px; padding-top:32px; border-top:1px solid #e8e2d6;">
+    <p style="font-family:'DM Serif Display',serif; font-size:0.85rem; color:#9ca3af; letter-spacing:0.08em; line-height:2;">
+      Crafted by <strong style="color:#c9a84c;">amadopapa</strong> —<br>
+      <span style="font-size:0.78rem;">FP Skills Certified · AI Life Creator</span>
+    </p>
+  </div>
+
+</section>
+
+<!-- ===== FOOTER ===== -->
+<footer class="footer">
+  <div class="footer-logo">FP Tools</div>
+  <p class="footer-text">Financial Planning Calculator Suite</p>
+</footer>
+
+<!-- ===== OVERLAY ===== -->
+<div class="overlay" id="overlay">
+  <div class="overlay-header">
+    <button class="back-btn" onclick="closeTool()">
+      ← ツール一覧へ戻る
+    </button>
+    <span class="overlay-title" id="overlay-title"></span>
+  </div>
+  <iframe class="overlay-frame" id="overlay-frame" src=""></iframe>
+</div>
+
+<script>
+  // カード出現アニメーション
+  const cards = document.querySelectorAll('.tool-card');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry, i) => {
+      if (entry.isIntersecting) {
+        setTimeout(() => entry.target.classList.add('visible'), i * 100);
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+  cards.forEach(c => observer.observe(c));
+
+  // ツールを開く
+  function openTool(file, title) {
+    document.getElementById('overlay-frame').src = file;
+    document.getElementById('overlay-title').textContent = title;
+    document.getElementById('overlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeTool() {
+    document.getElementById('overlay').classList.remove('open');
+    document.getElementById('overlay-frame').src = '';
+    document.body.style.overflow = '';
+  }
+
+  // ESCで閉じる
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeTool();
+  });
+</script>
+</body>
+</html>

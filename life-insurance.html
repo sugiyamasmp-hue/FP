@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>生命保険 必要保障額シミュレーター</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;600&family=Noto+Sans+JP:wght@300;400&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --purple:  #6d28d9;
+    --purple2: #8b5cf6;
+    --purple3: #ede9fe;
+    --navy:    #1a2744;
+    --green:   #16a34a;
+    --red:     #dc2626;
+    --gold:    #c9943a;
+    --ink:     #1a2030;
+    --gray:    #6b7280;
+    --border:  #ddd6f3;
+    --bg:      #f8f6ff;
+    --white:   #ffffff;
+    --shadow:  rgba(109,40,217,0.08);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--ink); font-family: 'Noto Sans JP', sans-serif; font-weight: 300; min-height: 100vh; }
+
+  header {
+    background: linear-gradient(135deg, var(--navy) 0%, #2d1f5e 100%);
+    color: white; padding: 22px 32px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 50;
+  }
+  header h1 { font-family: 'Noto Serif JP', serif; font-size: 1.2rem; font-weight: 600; letter-spacing: 0.1em; }
+  header span { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: #b4a4e8; }
+
+  .container { max-width: 960px; margin: 0 auto; padding: 32px 20px 60px; }
+
+  .tabs { display: flex; gap: 2px; margin-bottom: 28px; background: var(--border); border-radius: 6px; padding: 3px; flex-wrap: wrap; }
+  .tab-btn { flex: 1; min-width: 120px; padding: 10px 8px; border: none; background: transparent; cursor: pointer; font-family: 'Noto Serif JP', serif; font-size: 0.82rem; color: var(--gray); border-radius: 4px; transition: all 0.2s; letter-spacing: 0.05em; }
+  .tab-btn.active { background: var(--navy); color: white; }
+  .tab-btn:hover:not(.active) { background: rgba(109,40,217,0.1); color: var(--purple); }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .card { background: var(--white); border: 1px solid var(--border); border-radius: 10px; padding: 28px; margin-bottom: 20px; box-shadow: 0 2px 8px var(--shadow); position: relative; overflow: hidden; }
+  .card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--purple), var(--purple2)); }
+  .card.green::before { background: linear-gradient(90deg, var(--green), #4ade80); }
+  .card.gold::before { background: linear-gradient(90deg, var(--gold), #fcd34d); }
+
+  .card-title { font-family: 'Noto Serif JP', serif; font-size: 1rem; font-weight: 600; letter-spacing: 0.08em; margin-bottom: 6px; color: var(--ink); }
+  .card-desc { font-size: 0.78rem; color: var(--gray); margin-bottom: 20px; line-height: 1.8; }
+
+  .example-box { background: var(--purple3); border-left: 3px solid var(--purple2); border-radius: 0 6px 6px 0; padding: 12px 16px; margin-bottom: 20px; font-size: 0.78rem; line-height: 1.8; color: #4c1d95; }
+  .example-box strong { color: var(--purple); font-weight: 600; }
+
+  .input-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 18px; }
+  .field label { display: block; font-size: 0.72rem; letter-spacing: 0.06em; color: var(--gray); margin-bottom: 5px; }
+  .field input, .field select { width: 100%; padding: 9px 11px; border: 1px solid var(--border); border-radius: 5px; background: var(--bg); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--ink); outline: none; transition: border-color 0.2s; }
+  .field input:focus, .field select:focus { border-color: var(--purple2); background: white; }
+
+  .calc-btn { padding: 11px 28px; background: var(--navy); color: white; border: none; border-radius: 5px; font-family: 'Noto Serif JP', serif; font-size: 0.85rem; letter-spacing: 0.1em; cursor: pointer; transition: background 0.2s; }
+  .calc-btn:hover { background: var(--purple); }
+
+  .result-box { display: none; margin-top: 20px; }
+  .result-box.show { display: block; }
+
+  /* 必要保障額表示 */
+  .hoshogaku-box { background: linear-gradient(135deg, var(--navy) 0%, #2d1f5e 100%); color: white; border-radius: 12px; padding: 28px; text-align: center; margin-bottom: 20px; }
+  .hoshogaku-box .main-num { font-family: 'JetBrains Mono', monospace; font-size: 2.5rem; color: #e0d4ff; margin: 8px 0; }
+  .hoshogaku-box .sub { font-size: 0.78rem; color: #b4a4e8; margin-top: 4px; }
+
+  /* 内訳リスト */
+  .breakdown-list { display: grid; gap: 8px; margin-bottom: 16px; }
+  .breakdown-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border-radius: 6px; font-size: 0.8rem; }
+  .breakdown-item.need { background: #fef2f2; border: 1px solid #fca5a5; }
+  .breakdown-item.have { background: #dcfce7; border: 1px solid #86efac; }
+  .breakdown-item .b-label { color: var(--gray); }
+  .breakdown-item .b-val { font-family: 'JetBrains Mono', monospace; font-weight: 400; }
+  .breakdown-item.need .b-val { color: var(--red); }
+  .breakdown-item.have .b-val { color: var(--green); }
+
+  .total-row { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; background: var(--purple3); border: 2px solid var(--purple2); border-radius: 8px; margin-top: 8px; }
+  .total-row .t-label { font-family: 'Noto Serif JP', serif; font-size: 0.9rem; font-weight: 600; color: var(--purple); }
+  .total-row .t-val { font-family: 'JetBrains Mono', monospace; font-size: 1.2rem; color: var(--purple); }
+
+  /* 遺族収入 */
+  .income-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+  @media (max-width: 500px) { .income-grid { grid-template-columns: 1fr; } }
+  .income-card { padding: 14px; border-radius: 8px; text-align: center; }
+  .income-card.need { background: #fef2f2; border: 1px solid #fca5a5; }
+  .income-card.have { background: #dcfce7; border: 1px solid #86efac; }
+  .income-card .i-label { font-size: 0.7rem; color: var(--gray); margin-bottom: 4px; }
+  .income-card .i-val { font-family: 'JetBrains Mono', monospace; font-size: 1.1rem; }
+
+  .note { font-size: 0.7rem; color: var(--gray); margin-top: 10px; line-height: 1.7; }
+
+  /* 保険種類ガイド */
+  .insurance-type { display: grid; gap: 14px; }
+  .ins-card { background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+  .ins-card h4 { font-family: 'Noto Serif JP', serif; font-size: 0.9rem; font-weight: 600; color: var(--ink); margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+  .ins-card p { font-size: 0.78rem; color: var(--gray); line-height: 1.8; }
+  .ins-tag { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 0.65rem; letter-spacing: 0.05em; }
+  .tag-term { background: #dbeafe; color: #1e40af; }
+  .tag-whole { background: #dcfce7; color: #14532d; }
+  .tag-endow { background: var(--purple3); color: var(--purple); }
+
+  @media (max-width: 600px) { header { padding: 16px 20px; } .card { padding: 18px; } }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>生命保険 必要保障額シミュレーター</h1>
+    <span>Life Insurance Calculator</span>
+  </div>
+</header>
+
+<div class="container">
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('hoshogaku')">必要保障額の計算</button>
+    <button class="tab-btn" onclick="switchTab('survivors')">遺族収入シミュレーション</button>
+    <button class="tab-btn" onclick="switchTab('guide')">保険の種類ガイド</button>
+  </div>
+
+  <!-- ====== 必要保障額 ====== -->
+  <div id="tab-hoshogaku" class="panel active">
+    <div class="card">
+      <div class="card-title">🛡️ 必要保障額の計算</div>
+      <div class="example-box">
+        <strong>たとえば…</strong><br>
+        「もし今、自分が亡くなったら家族はどうなる？」<br>
+        残された家族の生活費・教育費・住宅ローンなどから、<strong>本当に必要な保険金額</strong>を計算します。<br>
+        「なんとなく入っている」保険を見直すきっかけにしてください。
+      </div>
+
+      <div class="card-title" style="font-size:0.85rem;margin-bottom:12px;color:var(--red);">📋 必要な支出（遺族が必要とするお金）</div>
+      <div class="input-grid">
+        <div class="field"><label>遺族の生活費（月額）</label><input id="h-expense" type="number" value="200000" step="10000"></div>
+        <div class="field"><label>生活費が必要な年数</label><input id="h-years" type="number" value="20" step="1"></div>
+        <div class="field"><label>子供の教育費（総額）</label><input id="h-edu" type="number" value="5000000" step="500000"></div>
+        <div class="field"><label>住宅ローン残高</label><input id="h-loan" type="number" value="20000000" step="1000000"></div>
+        <div class="field"><label>葬儀・整理費用</label><input id="h-funeral" type="number" value="2000000" step="100000"></div>
+        <div class="field"><label>その他一時費用</label><input id="h-other" type="number" value="1000000" step="100000"></div>
+      </div>
+
+      <div class="card-title" style="font-size:0.85rem;margin-bottom:12px;color:var(--green);">💰 すでにある資産・受取れるお金</div>
+      <div class="input-grid">
+        <div class="field"><label>現在の貯蓄額</label><input id="h-savings" type="number" value="5000000" step="500000"></div>
+        <div class="field"><label>配偶者の年収</label><input id="h-spouse" type="number" value="3000000" step="100000"></div>
+        <div class="field"><label>遺族年金（月額・概算）</label><input id="h-survivor" type="number" value="80000" step="10000"></div>
+        <div class="field"><label>死亡退職金</label><input id="h-retire" type="number" value="3000000" step="500000"></div>
+        <div class="field"><label>既加入保険の死亡保障額</label><input id="h-current" type="number" value="10000000" step="500000"></div>
+      </div>
+
+      <button class="calc-btn" onclick="calcHoshogaku()">必要保障額を計算する</button>
+
+      <div id="hoshogaku-result" class="result-box">
+        <div class="hoshogaku-box">
+          <div style="font-size:0.82rem;color:#b4a4e8;">追加で必要な保険金額</div>
+          <div class="main-num" id="h-result-num">—</div>
+          <div class="sub" id="h-result-sub"></div>
+        </div>
+
+        <div class="card-title" style="font-size:0.85rem;margin-bottom:10px;">📊 計算の内訳</div>
+        <div class="breakdown-list" id="h-breakdown"></div>
+        <p class="note">※ 住宅ローンは団体信用生命保険（団信）に加入している場合、死亡時に残債が完済されます。加入状況をご確認ください。遺族年金の正確な金額は年金事務所にお問合せください。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== 遺族収入 ====== -->
+  <div id="tab-survivors" class="panel">
+    <div class="card green">
+      <div class="card-title">👨‍👩‍👧 遺族収入シミュレーション</div>
+      <div class="example-box" style="background:#dcfce7;border-color:#4ade80;color:#14532d;">
+        <strong>たとえば…</strong><br>
+        「夫が亡くなったら、妻と子供はいくら受け取れるの？」<br>
+        遺族年金の概算額と、生活費との差額（毎月の不足額）を計算します。
+      </div>
+
+      <div class="input-grid">
+        <div class="field"><label>亡くなった方の年収</label><input id="s-income" type="number" value="5000000" step="100000"></div>
+        <div class="field"><label>厚生年金加入期間（年）</label><input id="s-kinen" type="number" value="20" step="1"></div>
+        <div class="field"><label>子供の人数</label><input id="s-children" type="number" value="2" step="1" min="0" max="5"></div>
+        <div class="field"><label>末子の年齢</label><input id="s-child-age" type="number" value="5" step="1"></div>
+        <div class="field"><label>遺族の月の生活費</label><input id="s-expense" type="number" value="200000" step="10000"></div>
+        <div class="field"><label>配偶者の月収入</label><input id="s-spouse" type="number" value="150000" step="10000"></div>
+      </div>
+
+      <button class="calc-btn" onclick="calcSurvivors()">計算する</button>
+
+      <div id="survivors-result" class="result-box">
+        <div class="income-grid" id="s-grid"></div>
+        <div id="s-detail" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:16px;margin-top:12px;font-size:0.78rem;line-height:1.9;"></div>
+        <p class="note">※ 遺族年金は加入状況・家族構成によって変わります。概算値です。正確な金額は年金事務所にご確認ください。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== 保険ガイド ====== -->
+  <div id="tab-guide" class="panel">
+    <div class="card gold">
+      <div class="card-title">📘 生命保険の種類をわかりやすく解説</div>
+      <div class="card-desc">「どの保険に入ればいいかわからない」という方へ。種類と特徴をシンプルに説明します。</div>
+
+      <div class="insurance-type">
+        <div class="ins-card">
+          <h4>⏰ 定期保険 <span class="ins-tag tag-term">掛け捨て</span></h4>
+          <p>
+            一定期間だけ保障する保険。子供が独立するまでの間など、<strong>保障が必要な期間だけ</strong>をカバーします。<br>
+            保険料が安い代わりに、期間が終わればお金は戻りません。<br>
+            「安くて大きな保障」が欲しい若い家庭に向いています。
+          </p>
+        </div>
+        <div class="ins-card">
+          <h4>🔒 終身保険 <span class="ins-tag tag-whole">貯蓄性あり</span></h4>
+          <p>
+            一生涯保障が続く保険。解約すると解約返戻金が受け取れるため<strong>貯蓄的な側面</strong>もあります。<br>
+            保険料は定期より高めですが、葬儀費用や相続対策に使われることが多いです。<br>
+            老後の安心と貯蓄を両立したい方に向いています。
+          </p>
+        </div>
+        <div class="ins-card">
+          <h4>📅 養老保険 <span class="ins-tag tag-endow">満期金あり</span></h4>
+          <p>
+            一定期間の保障＋満期時に満期金が受け取れる保険。<br>
+            死亡しても満期を迎えても、同額のお金が受け取れます。<br>
+            保険料は高めですが、確実に戻ってくるお金がある安心感があります。
+          </p>
+        </div>
+        <div class="ins-card">
+          <h4>📉 収入保障保険</h4>
+          <p>
+            亡くなった時に<strong>毎月一定額を年金形式</strong>で受け取れる保険。<br>
+            「まとまったお金より毎月の生活費が欲しい」という遺族のニーズに合っています。<br>
+            保険料が割安で、定期保険と並んで若い家庭に人気です。
+          </p>
+        </div>
+      </div>
+
+      <div style="margin-top:20px;padding:16px;background:var(--purple3);border-radius:8px;font-size:0.78rem;line-height:1.9;color:#4c1d95;">
+        <strong>💡 選び方のポイント</strong><br>
+        子供が小さい → <strong>定期保険・収入保障保険</strong>（安くて大きな保障）<br>
+        葬儀費用・相続対策 → <strong>終身保険</strong><br>
+        貯蓄と保障を両立 → <strong>養老保険・終身保険</strong><br>
+        住宅ローンがある → <strong>団信</strong>（ローン完済時に死亡保障は不要になる場合あり）
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const fmt  = (n) => Math.round(n).toLocaleString('ja-JP');
+const fmtC = (n) => '¥' + fmt(n);
+
+function switchTab(id) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ===== 必要保障額 =====
+function calcHoshogaku() {
+  const expense  = +document.getElementById('h-expense').value;
+  const years    = +document.getElementById('h-years').value;
+  const edu      = +document.getElementById('h-edu').value;
+  const loan     = +document.getElementById('h-loan').value;
+  const funeral  = +document.getElementById('h-funeral').value;
+  const other    = +document.getElementById('h-other').value;
+
+  const savings  = +document.getElementById('h-savings').value;
+  const spouse   = +document.getElementById('h-spouse').value;
+  const survivor = +document.getElementById('h-survivor').value;
+  const retire   = +document.getElementById('h-retire').value;
+  const current  = +document.getElementById('h-current').value;
+
+  // 必要額
+  const livingCost   = expense * 12 * years;
+  const spouseIncome = spouse * years;
+  const survivorPension = survivor * 12 * years;
+  const totalNeed    = livingCost + edu + loan + funeral + other;
+  const totalHave    = savings + spouseIncome + survivorPension + retire + current;
+  const gap          = totalNeed - totalHave;
+
+  document.getElementById('h-result-num').textContent = gap > 0 ? fmtC(gap) : '保障は充足しています';
+  document.getElementById('h-result-sub').textContent = gap > 0
+    ? `現在の保険に追加で ${fmtC(gap)} の保障が必要です`
+    : `現在の資産・保険で ${fmtC(Math.abs(gap))} の余裕があります`;
+
+  document.getElementById('h-breakdown').innerHTML = `
+    <div style="font-size:0.78rem;color:var(--gray);margin-bottom:6px;font-weight:600;">■ 必要な支出（合計 ${fmtC(totalNeed)}）</div>
+    <div class="breakdown-item need"><span class="b-label">遺族の生活費（${years}年間）</span><span class="b-val">−${fmtC(livingCost)}</span></div>
+    <div class="breakdown-item need"><span class="b-label">子供の教育費</span><span class="b-val">−${fmtC(edu)}</span></div>
+    <div class="breakdown-item need"><span class="b-label">住宅ローン残高</span><span class="b-val">−${fmtC(loan)}</span></div>
+    <div class="breakdown-item need"><span class="b-label">葬儀・整理費用</span><span class="b-val">−${fmtC(funeral)}</span></div>
+    <div class="breakdown-item need"><span class="b-label">その他一時費用</span><span class="b-val">−${fmtC(other)}</span></div>
+    <div style="font-size:0.78rem;color:var(--gray);margin:12px 0 6px;font-weight:600;">■ すでにある資産・収入（合計 ${fmtC(totalHave)}）</div>
+    <div class="breakdown-item have"><span class="b-label">現在の貯蓄額</span><span class="b-val">+${fmtC(savings)}</span></div>
+    <div class="breakdown-item have"><span class="b-label">配偶者の収入（${years}年間）</span><span class="b-val">+${fmtC(spouseIncome)}</span></div>
+    <div class="breakdown-item have"><span class="b-label">遺族年金（${years}年間）</span><span class="b-val">+${fmtC(survivorPension)}</span></div>
+    <div class="breakdown-item have"><span class="b-label">死亡退職金</span><span class="b-val">+${fmtC(retire)}</span></div>
+    <div class="breakdown-item have"><span class="b-label">既加入保険の死亡保障</span><span class="b-val">+${fmtC(current)}</span></div>
+    <div class="total-row"><span class="t-label">${gap>0?'追加で必要な保障額':'余裕額'}</span><span class="t-val">${fmtC(Math.abs(gap))}</span></div>`;
+
+  document.getElementById('hoshogaku-result').classList.add('show');
+}
+
+// ===== 遺族収入 =====
+function calcSurvivors() {
+  const income    = +document.getElementById('s-income').value;
+  const kinen     = +document.getElementById('s-kinen').value;
+  const children  = +document.getElementById('s-children').value;
+  const childAge  = +document.getElementById('s-child-age').value;
+  const expense   = +document.getElementById('s-expense').value;
+  const spouse    = +document.getElementById('s-spouse').value;
+
+  // 遺族基礎年金（子あり）
+  const basicBase = 816000; // 2024年度
+  const childAdd  = children >= 1 ? 234800 + (children >= 2 ? 234800 : 0) + (children >= 3 ? 78300 * (children-2) : 0) : 0;
+  const basicPension = children > 0 ? (basicBase + childAdd) / 12 : 0;
+
+  // 遺族厚生年金（報酬比例部分の3/4）
+  const avgMonthly = income / 12;
+  const koseiAnnual = avgMonthly * 0.005481 * Math.max(kinen, 25) * 12;
+  const koseiPension = koseiAnnual * 0.75 / 12;
+
+  const totalPension = basicPension + koseiPension;
+  const totalIncome  = totalPension + spouse;
+  const deficit      = expense - totalIncome;
+
+  // 子供が18歳になるまでの期間
+  const childYears = Math.max(0, 18 - childAge);
+
+  document.getElementById('s-grid').innerHTML = `
+    <div class="income-card need">
+      <div class="i-label">月の生活費</div>
+      <div class="i-val" style="color:var(--red);">${fmtC(expense)}</div>
+    </div>
+    <div class="income-card have">
+      <div class="i-label">月の総収入</div>
+      <div class="i-val" style="color:var(--green);">${fmtC(totalIncome)}</div>
+    </div>`;
+
+  document.getElementById('s-detail').innerHTML = `
+    <strong>遺族年金の内訳</strong><br>
+    遺族基礎年金：${fmtC(basicPension)}円/月 ${children===0?'（子なしのため受給なし）':''}<br>
+    遺族厚生年金：${fmtC(koseiPension)}円/月<br>
+    配偶者の収入：${fmtC(spouse)}円/月<br>
+    <strong>合計収入：${fmtC(totalIncome)}円/月</strong><br><br>
+    ${deficit > 0
+      ? `<span style="color:var(--red);">⚠️ 毎月 <strong>${fmtC(deficit)}円</strong> 不足します。</span><br>
+         年間 ${fmtC(deficit*12)}円、${childYears}年間で ${fmtC(deficit*12*childYears)}円 の不足になります。`
+      : `<span style="color:var(--green);">✅ 毎月 <strong>${fmtC(Math.abs(deficit))}</strong> の余裕があります。</span>`}
+    ${children > 0 ? `<br><br>※ 遺族基礎年金は末子が18歳（高校卒業）になると支給が終わります（あと約${childYears}年）。` : ''}`;
+
+  document.getElementById('survivors-result').classList.add('show');
+}
+</script>
+</body>
+</html>

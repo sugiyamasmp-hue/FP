@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NISA・iDeCo シミュレーター｜使い方</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;600;700&family=Noto+Sans+JP:wght@300;400&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green:  #2d6a4f;
+    --green2: #52b788;
+    --green3: #d8f3dc;
+    --green4: #f0faf4;
+    --blue:   #2563a8;
+    --blue2:  #dbeafe;
+    --gold:   #b5832a;
+    --gold2:  #fef3c7;
+    --ink:    #1c2b1a;
+    --gray:   #6b7280;
+    --border: #d1ddd0;
+    --bg:     #f4f7f2;
+    --white:  #ffffff;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-weight: 300;
+    line-height: 1.8;
+    min-height: 100vh;
+  }
+
+  /* ヘッダー */
+  header {
+    background: var(--green);
+    color: white;
+    text-align: center;
+    padding: 40px 24px 32px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 70% 80% at 50% 120%, rgba(82,183,136,0.3) 0%, transparent 70%);
+  }
+
+  .header-emoji {
+    font-size: 2.8rem;
+    margin-bottom: 12px;
+    display: block;
+    position: relative;
+  }
+
+  header h1 {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 1.4rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+    position: relative;
+  }
+
+  header p {
+    font-size: 0.82rem;
+    color: var(--green2);
+    letter-spacing: 0.05em;
+    position: relative;
+  }
+
+  /* メイン */
+  .container {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 32px 20px 60px;
+  }
+
+  /* セクション */
+  .section {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(28,43,26,0.07);
+  }
+
+  .section-title {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    margin-bottom: 20px;
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--green3);
+  }
+
+  /* ステップ */
+  .step {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 24px;
+    align-items: flex-start;
+  }
+
+  .step:last-child { margin-bottom: 0; }
+
+  .step-num {
+    width: 32px;
+    height: 32px;
+    background: var(--green);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .step-body h3 {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: var(--ink);
+  }
+
+  .step-body p {
+    font-size: 0.82rem;
+    color: var(--gray);
+    line-height: 1.9;
+  }
+
+  .step-body strong { color: var(--green); font-weight: 600; }
+
+  /* ハイライトボックス */
+  .highlight {
+    background: var(--green4);
+    border-left: 3px solid var(--green2);
+    border-radius: 0 6px 6px 0;
+    padding: 12px 16px;
+    margin: 10px 0 0;
+    font-size: 0.8rem;
+    color: var(--green);
+    line-height: 1.8;
+  }
+
+  .highlight-blue {
+    background: var(--blue2);
+    border-left: 3px solid var(--blue);
+    border-radius: 0 6px 6px 0;
+    padding: 12px 16px;
+    margin: 10px 0 0;
+    font-size: 0.8rem;
+    color: var(--blue);
+    line-height: 1.8;
+  }
+
+  .highlight-gold {
+    background: var(--gold2);
+    border-left: 3px solid var(--gold);
+    border-radius: 0 6px 6px 0;
+    padding: 12px 16px;
+    margin: 10px 0 0;
+    font-size: 0.8rem;
+    color: #92400e;
+    line-height: 1.8;
+  }
+
+  /* タブ説明 */
+  .tab-list {
+    display: grid;
+    gap: 12px;
+    margin-top: 4px;
+  }
+
+  .tab-item {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 14px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+
+  .tab-icon {
+    font-size: 1.4rem;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .tab-item h4 {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 0.88rem;
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: var(--ink);
+  }
+
+  .tab-item p {
+    font-size: 0.76rem;
+    color: var(--gray);
+    line-height: 1.8;
+  }
+
+  /* 用語集 */
+  .term-list { display: grid; gap: 10px; margin-top: 4px; }
+
+  .term {
+    padding: 12px 16px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+
+  .term dt {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--green);
+    margin-bottom: 4px;
+  }
+
+  .term dd {
+    font-size: 0.78rem;
+    color: var(--gray);
+    line-height: 1.8;
+  }
+
+  /* 注意事項 */
+  .caution {
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+    border-radius: 8px;
+    padding: 16px;
+    font-size: 0.78rem;
+    color: #92400e;
+    line-height: 1.9;
+  }
+
+  .caution-title {
+    font-weight: 600;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* 法改正バッジ */
+  .law-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #fee2e2;
+    border: 1px solid #fca5a5;
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 0.72rem;
+    color: #991b1b;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    margin-bottom: 12px;
+  }
+
+  .law-update {
+    background: #f0f9ff;
+    border: 1px solid #bae6fd;
+    border-radius: 8px;
+    padding: 16px;
+    font-size: 0.78rem;
+    color: #0c4a6e;
+    line-height: 1.9;
+    margin-top: 4px;
+  }
+
+  .law-update table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    font-size: 0.75rem;
+  }
+
+  .law-update th {
+    background: #0c4a6e;
+    color: white;
+    padding: 6px 10px;
+    text-align: left;
+    font-weight: 400;
+  }
+
+  .law-update td {
+    padding: 6px 10px;
+    border-bottom: 1px solid #bae6fd;
+    vertical-align: top;
+  }
+
+  .law-update tr:last-child td { border-bottom: none; }
+
+  /* フッター・QR */
+  footer {
+    background: var(--ink);
+    color: white;
+    text-align: center;
+    padding: 48px 24px 40px;
+    margin-top: 40px;
+  }
+
+  footer .footer-emoji { font-size: 2rem; margin-bottom: 16px; display: block; }
+
+  footer p {
+    font-size: 0.82rem;
+    color: #9ca3af;
+    line-height: 1.9;
+    margin-bottom: 24px;
+  }
+
+  footer strong { color: white; }
+
+  .note-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: white;
+    color: var(--ink);
+    text-decoration: none;
+    padding: 12px 24px;
+    border-radius: 40px;
+    font-family: 'Noto Serif JP', serif;
+    font-size: 0.88rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    margin-bottom: 32px;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+
+  .note-link:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+  }
+
+  .qr-area {
+    margin: 0 auto;
+    max-width: 200px;
+  }
+
+  .qr-box {
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 10px;
+  }
+
+  .qr-box canvas {
+    display: block;
+    margin: 0 auto;
+  }
+
+  .qr-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    color: #9ca3af;
+    letter-spacing: 0.1em;
+    margin-top: 8px;
+  }
+
+  .copyright {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    color: #4b5563;
+    margin-top: 24px;
+    letter-spacing: 0.1em;
+  }
+
+  /* アプリへ戻るボタン */
+  .back-btn-wrap {
+    text-align: center;
+    margin-bottom: 28px;
+  }
+
+  .back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--green);
+    color: white;
+    text-decoration: none;
+    padding: 11px 24px;
+    border-radius: 40px;
+    font-size: 0.85rem;
+    letter-spacing: 0.05em;
+    transition: background 0.2s;
+  }
+
+  .back-btn:hover { background: var(--green2); }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="header-emoji">📊</span>
+  <h1>NISA・iDeCo シミュレーター</h1>
+  <p>使い方ガイド &amp; 制度解説</p>
+</header>
+
+<div class="container">
+
+  <div class="back-btn-wrap">
+    <a class="back-btn" href="nisa-ideco.html">← シミュレーターを開く</a>
+  </div>
+
+  <!-- このアプリでできること -->
+  <div class="section">
+    <div class="section-title">📋 このアプリでできること</div>
+    <div class="tab-list">
+      <div class="tab-item">
+        <div class="tab-icon">📊</div>
+        <div>
+          <h4>4パターン比較</h4>
+          <p>同じ金額・期間で積み立てた場合の「普通預金・課税口座・NISA・iDeCo」を横並びで比較。非課税制度の威力を一目で確認できます。</p>
+        </div>
+      </div>
+      <div class="tab-item">
+        <div class="tab-icon">📗</div>
+        <div>
+          <h4>NISAシミュレーター</h4>
+          <p>毎月の積立額・想定利率・期間を入れると、将来の資産額と非課税メリット（節税額）を計算。1,800万円の生涯枠を超えた場合の警告も表示します。</p>
+        </div>
+      </div>
+      <div class="tab-item">
+        <div class="tab-icon">🔵</div>
+        <div>
+          <h4>iDeCo節税計算</h4>
+          <p>職業と所得税率を選ぶと、掛金による年間節税額・積立期間中の節税総額を計算。掛金上限も職業別に自動表示されます。</p>
+        </div>
+      </div>
+      <div class="tab-item">
+        <div class="tab-icon">📘</div>
+        <div>
+          <h4>係数・用語解説</h4>
+          <p>NISAとiDeCoの違い、よく出てくる言葉の意味をわかりやすく解説。専門知識がなくても安心して使えます。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 使い方ステップ -->
+  <div class="section">
+    <div class="section-title">📖 基本の使い方</div>
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h3>タブを選ぶ</h3>
+        <p>画面上部の4つのタブから、使いたい機能を選んでください。<br>はじめての方は<strong>「4パターン比較」</strong>からどうぞ。</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h3>数字を入れる</h3>
+        <p><strong>毎月の積立額・想定利率・積立期間</strong>を入力します。<br>iDeCoタブでは職業と所得税率も選んでください。</p>
+        <div class="highlight">
+          💡 <strong>想定利率の目安</strong><br>
+          3%：保守的な想定（債券中心）<br>
+          4〜5%：一般的によく使われる想定<br>
+          7%：全世界株式インデックスの歴史的平均に近い想定
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h3>「計算する」ボタンを押す</h3>
+        <p>結果が表示されます。グラフで資産の<strong>推移イメージ</strong>も確認できます。</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <h3>数字を変えて比べる</h3>
+        <p>積立額や期間を変えて何度でも試せます。<strong>「毎月1万円増やしたら？」「10年長く続けたら？」</strong>など、いろいろ試してみてください。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- iDeCo職業選択 -->
+  <div class="section">
+    <div class="section-title">🔵 iDeCo 掛金上限について</div>
+    <p style="font-size:0.82rem; color:var(--gray); margin-bottom:14px;">iDeCoの掛金には職業によって上限があります。シミュレーターで職業を選ぶと自動で上限が表示されます。</p>
+
+    <div class="highlight-blue">
+      <strong>現在の掛金上限（2025年時点）</strong><br>
+      会社員（企業年金なし）：月 23,000円<br>
+      会社員（企業型DC併用）：月 20,000円<br>
+      会社員（DB・厚生年金基金あり）：月 12,000円<br>
+      公務員：月 12,000円<br>
+      自営業者：月 68,000円<br>
+      専業主婦（夫）：月 23,000円
+    </div>
+  </div>
+
+  <!-- 法改正情報 -->
+  <div class="section">
+    <div class="section-title">⚡ 最新の法改正情報</div>
+    <div class="law-badge">🔴 重要：2027年1月から大幅改正</div>
+
+    <div class="law-update">
+      <strong>掛金上限が大幅に引き上げられます</strong>
+      <table>
+        <thead>
+          <tr><th>区分</th><th>現在</th><th>2027年1月〜</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>会社員（企業年金なし）</td><td>23,000円</td><td><strong>62,000円</strong></td></tr>
+          <tr><td>会社員（企業年金あり）・公務員</td><td>12,000〜20,000円</td><td>企業年金との合算で<strong>最大62,000円</strong></td></tr>
+          <tr><td>自営業者</td><td>68,000円</td><td><strong>75,000円</strong></td></tr>
+        </tbody>
+      </table>
+      <div style="margin-top:10px;">
+        また、加入可能年齢が<strong>65歳未満 → 70歳未満</strong>に引き上げられます。
+      </div>
+    </div>
+
+    <div class="highlight-gold" style="margin-top:12px;">
+      ⚠️ <strong>2026年1月〜「10年ルール」に変更</strong><br>
+      iDeCoを一時金で受け取った後、退職金と別々に退職所得控除を使うためには、これまで5年以上空ける必要がありましたが、<strong>10年以上</strong>に延長されました。退職金がある方は受取時期の戦略が重要になります。
+    </div>
+  </div>
+
+  <!-- よくある質問 -->
+  <div class="section">
+    <div class="section-title">❓ よくある質問</div>
+    <div class="term-list">
+      <dl class="term">
+        <dt>NISAとiDeCo、どちらを優先すべき？</dt>
+        <dd>老後資金が目的でいつでも引き出さない方はiDeCo（節税効果大）、途中で使う可能性がある方はNISAがおすすめです。両方同時に使うのが理想的です。</dd>
+      </dl>
+      <dl class="term">
+        <dt>想定利率は何%にすればいい？</dt>
+        <dd>将来のリターンは保証されません。楽観的な数字（7%以上）は注意が必要です。4〜5%程度で試算して、「これくらいになればいい」と確認するのが現実的です。</dd>
+      </dl>
+      <dl class="term">
+        <dt>iDeCoは何歳から始めれば60歳で受け取れる？</dt>
+        <dd>60歳から受け取るには通算加入期間が10年以上必要です。つまり<strong>50歳まで</strong>に加入すれば60歳から受取可能。55歳で加入した場合は63歳からになります。</dd>
+      </dl>
+      <dl class="term">
+        <dt>退職金とiDeCoは同時に受け取れる？</dt>
+        <dd>同じ年に受け取ると退職所得控除を合算して使えます。退職金が大きい方は控除枠をはみ出す場合もあるため、FPへの相談をおすすめします。</dd>
+      </dl>
+      <dl class="term">
+        <dt>住民税の節税も含まれている？</dt>
+        <dd>はい。iDeCoの節税計算では所得税＋住民税10%（一律）を合算して計算しています。住民税は所得の多少にかかわらず一律10%です。</dd>
+      </dl>
+    </div>
+  </div>
+
+  <!-- 注意事項 -->
+  <div class="caution">
+    <div class="caution-title">⚠️ ご利用にあたってのご注意</div>
+    このシミュレーターは概算計算のための参考ツールです。実際の運用成果・税額は異なる場合があります。投資には元本割れリスクがあります。具体的な判断はファイナンシャルプランナーや金融機関にご相談ください。掛金上限・税制は法改正により変更になることがあります。
+    <br><br>© 2025 amadopapa　All Rights Reserved.
+  </div>
+
+</div>
+
+<!-- フッター -->
+<footer>
+  <span class="footer-emoji">🌿</span>
+  <p>
+    他にも便利なアプリやお金の知識を発信しています。<br>
+    よかったら<strong>noteをフォロー</strong>してください。
+  </p>
+  <a class="note-link" href="https://note.com/amadopapa" target="_blank">
+    📝 noteを見てみる
+  </a>
+
+  <div class="qr-area">
+    <div class="qr-box">
+      <canvas id="qrCanvas"></canvas>
+    </div>
+    <div class="qr-label">note.com/amadopapa</div>
+  </div>
+
+  <div class="copyright">NISA・iDeCo Simulator © 2025 | note.com/amadopapa</div>
+</footer>
+
+<script>
+// ===== QRコード生成（ライブラリなしで描画） =====
+(function() {
+  const url = 'https://note.com/amadopapa';
+  const canvas = document.getElementById('qrCanvas');
+  const size = 160;
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+
+  // QRコード生成（簡易版：外部ライブラリを使わずにURL表示のみ）
+  // 実用的なQRはライブラリが必要なため、qrcode.jsを動的ロード
+  const script = document.createElement('script');
+  script.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+  script.onload = function() {
+    canvas.style.display = 'none';
+    const div = document.createElement('div');
+    div.style.margin = '0 auto';
+    canvas.parentNode.insertBefore(div, canvas);
+    new QRCode(div, {
+      text: url,
+      width: 140,
+      height: 140,
+      colorDark: '#1c2b1a',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M
+    });
+  };
+  script.onerror = function() {
+    // フォールバック：URLテキスト表示
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, size, size);
+    ctx.fillStyle = '#2d6a4f';
+    ctx.font = 'bold 11px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('note.com/', size/2, size/2 - 8);
+    ctx.fillText('amadopapa', size/2, size/2 + 10);
+  };
+  document.head.appendChild(script);
+})();
+</script>
+</body>
+</html>

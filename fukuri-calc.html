@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>複利計算ツール</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;600&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1a1a;
+    --paper: #f7f4ee;
+    --cream: #ede9e0;
+    --rule: #c8c0ae;
+    --accent: #7c5c3a;
+    --accent2: #3a5c7c;
+    --red: #9c3a2a;
+    --green: #2a6c4a;
+    --shadow: rgba(26,20,10,0.12);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Noto Serif JP', serif;
+    font-weight: 300;
+    min-height: 100vh;
+    background-image:
+      repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 27px,
+        rgba(200,192,174,0.3) 27px,
+        rgba(200,192,174,0.3) 28px
+      );
+  }
+
+  header {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 28px 40px 24px;
+    border-bottom: 3px solid var(--accent);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+  }
+
+  header h1 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+  }
+
+  header span {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--rule);
+    letter-spacing: 0.1em;
+  }
+
+  .container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 40px 24px;
+  }
+
+  /* タブ */
+  .tabs {
+    display: flex;
+    gap: 2px;
+    margin-bottom: 32px;
+    background: var(--cream);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: 4px;
+    flex-wrap: wrap;
+  }
+
+  .tab-btn {
+    flex: 1;
+    min-width: 100px;
+    padding: 10px 8px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-family: 'Noto Serif JP', serif;
+    font-size: 0.8rem;
+    font-weight: 400;
+    color: #888;
+    border-radius: 3px;
+    transition: all 0.2s;
+    letter-spacing: 0.05em;
+    text-align: center;
+  }
+
+  .tab-btn.active {
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  .tab-btn:hover:not(.active) {
+    background: rgba(26,20,10,0.08);
+    color: var(--ink);
+  }
+
+  /* パネル */
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* カード */
+  .card {
+    background: white;
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: 32px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 8px var(--shadow);
+    position: relative;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--accent);
+    border-radius: 6px 0 0 6px;
+  }
+
+  .card.blue::before { background: var(--accent2); }
+  .card.green::before { background: var(--green); }
+  .card.red::before { background: var(--red); }
+
+  .card-title {
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+    color: var(--ink);
+  }
+
+  .card-desc {
+    font-size: 0.78rem;
+    color: #888;
+    margin-bottom: 24px;
+    letter-spacing: 0.03em;
+    line-height: 1.7;
+  }
+
+  .formula-box {
+    background: var(--cream);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem;
+    color: var(--accent);
+    letter-spacing: 0.05em;
+  }
+
+  /* 入力グリッド */
+  .input-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .field label {
+    display: block;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    color: #666;
+    margin-bottom: 6px;
+  }
+
+  .field input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    background: var(--paper);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.95rem;
+    color: var(--ink);
+    transition: border-color 0.2s;
+    outline: none;
+  }
+
+  .field input:focus {
+    border-color: var(--accent);
+    background: white;
+  }
+
+  /* ボタン */
+  .calc-btn {
+    padding: 12px 32px;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    border-radius: 4px;
+    font-family: 'Noto Serif JP', serif;
+    font-size: 0.85rem;
+    letter-spacing: 0.12em;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .calc-btn:hover { background: var(--accent); }
+
+  /* 結果 */
+  .result-box {
+    margin-top: 20px;
+    padding: 20px 24px;
+    background: var(--cream);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    display: none;
+  }
+
+  .result-box.show { display: block; }
+
+  .result-main {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.6rem;
+    font-weight: 400;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+
+  .result-label {
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    color: #888;
+    margin-bottom: 12px;
+  }
+
+  .result-detail {
+    font-size: 0.78rem;
+    color: #666;
+    line-height: 1.9;
+    letter-spacing: 0.03em;
+    border-top: 1px solid var(--rule);
+    padding-top: 12px;
+    margin-top: 8px;
+  }
+
+  .result-detail span.val {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--ink);
+  }
+
+  /* 係数テーブル */
+  .coeff-table-wrap {
+    overflow-x: auto;
+    margin-top: 20px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.78rem;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  th {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 8px 12px;
+    text-align: right;
+    font-weight: 400;
+    letter-spacing: 0.06em;
+    font-family: 'Noto Serif JP', serif;
+    font-size: 0.72rem;
+  }
+
+  th:first-child { text-align: center; }
+
+  td {
+    padding: 7px 12px;
+    text-align: right;
+    border-bottom: 1px solid var(--cream);
+    color: #333;
+  }
+
+  td:first-child {
+    text-align: center;
+    background: var(--cream);
+    font-family: 'Noto Serif JP', serif;
+    font-size: 0.75rem;
+    color: #666;
+  }
+
+  tr:hover td { background: #faf8f4; }
+  tr:hover td:first-child { background: #ede9e0; }
+
+  .highlight-row td { color: var(--accent); font-weight: 400; }
+
+  /* 一括計算 */
+  .rate-inputs {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+    align-items: flex-end;
+  }
+
+  .rate-inputs .field { flex: 0 0 120px; }
+
+  .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 2px;
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .tag-brown { background: #f0e6d8; color: var(--accent); }
+  .tag-blue  { background: #d8e6f0; color: var(--accent2); }
+  .tag-green { background: #d8f0e6; color: var(--green); }
+
+  /* 年金パネル */
+  .pension-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  @media (max-width: 640px) {
+    .pension-grid { grid-template-columns: 1fr; }
+    header { padding: 18px 20px; }
+    .card { padding: 20px; }
+    .tab-btn { font-size: 0.72rem; padding: 8px 4px; }
+  }
+
+  /* エラー */
+  .err { color: var(--red); font-size: 0.78rem; margin-top: 8px; display: none; }
+  .err.show { display: block; }
+
+  /* section divider */
+  .section-head {
+    font-size: 0.72rem;
+    letter-spacing: 0.15em;
+    color: #aaa;
+    text-transform: uppercase;
+    margin: 32px 0 16px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--rule);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>複利計算ツール</h1>
+  <span>Compound Interest Calculator</span>
+</header>
+
+<div class="container">
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('basic')">終価・現価</button>
+    <button class="tab-btn" onclick="switchTab('annuity')">年金終価・現価</button>
+    <button class="tab-btn" onclick="switchTab('sinking')">減債・資本回収</button>
+    <button class="tab-btn" onclick="switchTab('reverse')">逆算</button>
+    <button class="tab-btn" onclick="switchTab('table')">係数表</button>
+  </div>
+
+  <!-- ====== 終価・現価 ====== -->
+  <div id="tab-basic" class="panel active">
+
+    <div class="card">
+      <div class="card-title">終価係数 <span class="tag tag-brown">収穫係数</span></div>
+      <div class="card-desc">現在の元本が、一定金利で複利運用された場合に将来いくらになるかを求めます。</div>
+      <div class="formula-box">終価 = 元本 × (1 + r)ⁿ　　終価係数 = (1 + r)ⁿ</div>
+      <div class="input-grid">
+        <div class="field"><label>元本（現在価値）</label><input id="b1-pv" type="number" value="1000000" step="1000"></div>
+        <div class="field"><label>年利率（%）</label><input id="b1-r" type="number" value="2" step="0.1"></div>
+        <div class="field"><label>年数</label><input id="b1-n" type="number" value="5" step="1"></div>
+      </div>
+      <button class="calc-btn" onclick="calcFV()">計算する</button>
+      <div id="b1-result" class="result-box">
+        <div class="result-label">将来価値（終価）</div>
+        <div class="result-main" id="b1-fv">—</div>
+        <div class="result-detail" id="b1-detail"></div>
+      </div>
+    </div>
+
+    <div class="card blue">
+      <div class="card-title">現価係数 <span class="tag tag-blue">減価係数</span></div>
+      <div class="card-desc">将来の金額を、指定の割引率で現在価値に換算します。終価係数の逆数です。</div>
+      <div class="formula-box">現価 = 将来価値 × 1/(1 + r)ⁿ　　現価係数 = 1/(1 + r)ⁿ</div>
+      <div class="input-grid">
+        <div class="field"><label>将来価値（終価）</label><input id="b2-fv" type="number" value="1000000" step="1000"></div>
+        <div class="field"><label>年利率（%）</label><input id="b2-r" type="number" value="2" step="0.1"></div>
+        <div class="field"><label>年数</label><input id="b2-n" type="number" value="5" step="1"></div>
+      </div>
+      <button class="calc-btn" onclick="calcPV()">計算する</button>
+      <div id="b2-result" class="result-box">
+        <div class="result-label">現在価値（現価）</div>
+        <div class="result-main" id="b2-pv">—</div>
+        <div class="result-detail" id="b2-detail"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ====== 年金終価・現価 ====== -->
+  <div id="tab-annuity" class="panel">
+
+    <div class="card">
+      <div class="card-title">年金終価係数</div>
+      <div class="card-desc">毎期一定額を積み立てた場合、n期後の合計額（終価）を求めます。<br>例：毎年100万円を積立、2%で5年後の総額。</div>
+      <div class="formula-box">年金終価 = 毎期積立額 × [(1+r)ⁿ − 1] / r</div>
+      <div class="input-grid">
+        <div class="field"><label>毎期積立額</label><input id="a1-pmt" type="number" value="100000" step="10000"></div>
+        <div class="field"><label>年利率（%）</label><input id="a1-r" type="number" value="2" step="0.1"></div>
+        <div class="field"><label>年数（期数）</label><input id="a1-n" type="number" value="5" step="1"></div>
+      </div>
+      <button class="calc-btn" onclick="calcAFV()">計算する</button>
+      <div id="a1-result" class="result-box">
+        <div class="result-label">年金終価</div>
+        <div class="result-main" id="a1-fv">—</div>
+        <div class="result-detail" id="a1-detail"></div>
+      </div>
+    </div>
+
+    <div class="card blue">
+      <div class="card-title">年金現価係数</div>
+      <div class="card-desc">将来にわたって毎期受け取る一定額の、現在価値の合計を求めます。<br>例：年金・ローン残高の計算に利用。</div>
+      <div class="formula-box">年金現価 = 毎期受取額 × [1 − (1+r)⁻ⁿ] / r</div>
+      <div class="input-grid">
+        <div class="field"><label>毎期受取額</label><input id="a2-pmt" type="number" value="100000" step="10000"></div>
+        <div class="field"><label>年利率（%）</label><input id="a2-r" type="number" value="2" step="0.1"></div>
+        <div class="field"><label>年数（期数）</label><input id="a2-n" type="number" value="5" step="1"></div>
+      </div>
+      <button class="calc-btn" onclick="calcAPV()">計算する</button>
+      <div id="a2-result" class="result-box">
+        <div class="result-label">年金現価</div>
+        <div class="result-main" id="a2-pv">—</div>
+        <div class="result-detail" id="a2-detail"></div>
+      </div>
+    </div>
+
+    <div class="card green">
+      <div class="card-title">期首払い年金現価（年金先払い）</div>
+      <div class="card-desc">毎期の支払いが期首（前払い）の場合の年金現価。リース・家賃など前払い契約に対応。</div>
+      <div class="formula-box">期首年金現価 = 毎期受取額 × [1 − (1+r)⁻ⁿ] / r × (1+r)</div>
+      <div class="input-grid">
+        <div class="field"><label>毎期受取額</label><input id="a3-pmt" type="number" value="100000" step="10000"></div>
+        <div class="field"><label>年利率（%）</label><input id="a3-r" type="number" value="2" step="0.1"></div>
+        <div class="field"><label>年数（期数）</label><input id="a3-n" type="number" value="5" step="1"></div>
+      </div>
+      <button class="calc-btn" onclick="calcAPVdue()">計算する</button>
+      <div id="a3-result" class="result-box">
+        <div class="result-label">期首払い年金現価</div>
+        <div class="result-main" id="a3-pv">—</div>
+        <div class="result-detail" id="a3-detail"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">永久年金現価（永続年金）</div>
+      <div class="card-desc">無限に続く一定額の年金の現在価値。配当割引モデルや不動産収益価値の計算などに使用。</div>
+      <div class="formula-box">永久年金現価 = 毎期受取額 / r</div>
+      <div class="input-grid">
+        <div class="field"><label>毎期受取額</label><input id="a4-pmt" type="number" value="100000" step="10000"></div>
+        <div class="field"><label>年利率（%）</label><input id="a4-r" type="number" value="2" step="0.1"></div>
+      </div>
+      <button class="calc-btn" onclick="calcPerp()">計算する</button>
+      <div id="a4-result" class="result-box">
+        <div class="result-label">永久年金現価</div>
+        <div class="result-main" id="a4-pv">—</div>
+        <div class="result-detail" id="a4-detail"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ====== 減債基金・資本回収 ====== -->
+  <div id="tab-sinking" class="panel">
+
+    <div class="card">
+      <div class="card-title">減債基金係数</div>
+      <div class="card-desc">n年後に目標金額を用意するために、毎期いくら積み立てれば良いかを計算します。年金終価係数の逆数。</div>
+      <div class="formula-box">毎期積立額 = 目標額 × r / [(1+r)ⁿ − 1]</div>
+      <div class="input-grid">
+        <div class="field"><label>目標金額（将来価値）</label><input id="s1-fv" type="number" value="5000000" step="100000"></div>
+        <div class="field"><label>年利率（%）</label><input id="s1-r" type="number" value="2" step="0.1"></div>
+        <div class="field"><label>年数</label><input id="s1-n" type="number" value="10" step="1"></div>
+      </div>
+      <button class="calc-btn" onclick="calcSinking()">計算する</button>
+      <div id="s1-result" class="result-box">
+        <div class="result-label">毎年の必要積立額</div>
+        <div class="result-main" id="s1-pmt">—</div>
+        <div class="result-detail" id="s1-detail"></div>
+      </div>
+    </div>
+
+    <div class="card blue">
+      <div class="card-title">資本回収係数 <span class="tag tag-blue">減産経過係数</span></div>
+      <div class="card-desc">現在の投資額（元本）を、n年間で利息込みで回収するために必要な毎期受取額を求めます。ローン返済計算の基本。</div>
+      <div class="formula-box">毎期回収額 = 現在価値 × r(1+r)ⁿ / [(1+r)ⁿ − 1]</div>
+      <div class="input-grid">
+        <div class="field"><label>現在価値（元本）</label><input id="s2-pv" type="number" value="3000000" step="100000"></div>
+        <div class="field"><label>年利率（%）</label><input id="s2-r" type="number" value="2" step="0.1"></div>
+        <div class="field"><label>年数</label><input id="s2-n" type="number" value="10" step="1"></div>
+      </div>
+      <button class="calc-btn" onclick="calcCapRec()">計算する</button>
+      <div id="s2-result" class="result-box">
+        <div class="result-label">毎年の受取（返済）額</div>
+        <div class="result-main" id="s2-pmt">—</div>
+        <div class="result-detail" id="s2-detail"></div>
+      </div>
+    </div>
+
+    <!-- ローン返済スケジュール -->
+    <div class="section-head">ローン返済スケジュール</div>
+    <div class="card green">
+      <div class="card-title">元利均等返済スケジュール</div>
+      <div class="card-desc">毎期の返済額を一定とした場合の、元本・利息の内訳を期ごとに表示します。</div>
+      <div class="input-grid">
+        <div class="field"><label>借入元本</label><input id="loan-pv" type="number" value="3000000" step="100000"></div>
+        <div class="field"><label>年利率（%）</label><input id="loan-r" type="number" value="2" step="0.1"></div>
+        <div class="field"><label>返済年数</label><input id="loan-n" type="number" value="10" step="1"></div>
+      </div>
+      <button class="calc-btn" onclick="calcLoanSchedule()">スケジュール生成</button>
+      <div id="loan-result" class="result-box">
+        <div class="result-label">毎年返済額</div>
+        <div class="result-main" id="loan-pmt">—</div>
+        <div class="coeff-table-wrap" id="loan-table-wrap" style="margin-top:16px;"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ====== 逆算 ====== -->
+  <div id="tab-reverse" class="panel">
+
+    <div class="card">
+      <div class="card-title">金利の逆算</div>
+      <div class="card-desc">元本・将来価値・年数から、実質金利（IRR）を求めます。</div>
+      <div class="formula-box">r = (FV/PV)^(1/n) − 1</div>
+      <div class="input-grid">
+        <div class="field"><label>元本（現在価値）</label><input id="r1-pv" type="number" value="1000000" step="10000"></div>
+        <div class="field"><label>将来価値</label><input id="r1-fv" type="number" value="1104081" step="10000"></div>
+        <div class="field"><label>年数</label><input id="r1-n" type="number" value="5" step="1"></div>
+      </div>
+      <button class="calc-btn" onclick="calcRate()">計算する</button>
+      <div id="r1-result" class="result-box">
+        <div class="result-label">実質年利率</div>
+        <div class="result-main" id="r1-r">—</div>
+        <div class="result-detail" id="r1-detail"></div>
+      </div>
+    </div>
+
+    <div class="card blue">
+      <div class="card-title">期間の逆算</div>
+      <div class="card-desc">元本・将来価値・金利から、必要な年数を求めます。</div>
+      <div class="formula-box">n = log(FV/PV) / log(1+r)</div>
+      <div class="input-grid">
+        <div class="field"><label>元本（現在価値）</label><input id="r2-pv" type="number" value="1000000" step="10000"></div>
+        <div class="field"><label>目標将来価値</label><input id="r2-fv" type="number" value="2000000" step="10000"></div>
+        <div class="field"><label>年利率（%）</label><input id="r2-r" type="number" value="5" step="0.1"></div>
+      </div>
+      <button class="calc-btn" onclick="calcPeriod()">計算する</button>
+      <div id="r2-result" class="result-box">
+        <div class="result-label">必要年数</div>
+        <div class="result-main" id="r2-n">—</div>
+        <div class="result-detail" id="r2-detail"></div>
+      </div>
+    </div>
+
+    <div class="card green">
+      <div class="card-title">72の法則（早見）</div>
+      <div class="card-desc">元本が2倍になるまでの概算年数を、72 ÷ 金利で素早く求めます。</div>
+      <div class="formula-box">倍になる年数 ≈ 72 / 年利率(%)　　　※ 精算値は log(2)/log(1+r)</div>
+      <div class="input-grid">
+        <div class="field"><label>年利率（%）</label><input id="r3-r" type="number" value="3" step="0.1"></div>
+      </div>
+      <button class="calc-btn" onclick="calc72()">計算する</button>
+      <div id="r3-result" class="result-box">
+        <div class="result-label">資産が2倍になる概算年数</div>
+        <div class="result-main" id="r3-n">—</div>
+        <div class="result-detail" id="r3-detail"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ====== 係数表 ====== -->
+  <div id="tab-table" class="panel">
+    <div class="card">
+      <div class="card-title">複利係数一覧表</div>
+      <div class="card-desc">年数・金利を指定して、6種類の係数を一覧で確認できます。ハイライト行が指定年数の係数です。</div>
+      <div class="rate-inputs">
+        <div class="field"><label>年利率（%）</label><input id="tbl-r" type="number" value="2" step="0.1"></div>
+        <div class="field"><label>最大年数</label><input id="tbl-n" type="number" value="20" step="5" min="5" max="50"></div>
+        <div class="field"><label>ハイライト年数</label><input id="tbl-hl" type="number" value="5" step="1"></div>
+        <button class="calc-btn" onclick="calcTable()" style="margin-top:22px;">表を生成</button>
+      </div>
+      <div class="coeff-table-wrap" id="coeff-table"></div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<script>
+// ===== ユーティリティ =====
+const fmt = (n, digits=0) => n.toLocaleString('ja-JP', {minimumFractionDigits: digits, maximumFractionDigits: digits});
+const fmtC = (n) => '¥ ' + fmt(Math.round(n));
+const fmtP = (n) => fmt(n, 6);
+
+function showResult(id, mainVal, detailHTML) {
+  document.getElementById(id + '-result').classList.add('show');
+  document.getElementById(id).textContent = mainVal;
+  const det = document.getElementById(id.replace(/-[^-]+$/, '') + '-detail') || document.querySelector('#' + id.replace(/-[^-]+$/, '') + '-result .result-detail');
+  if (det) det.innerHTML = detailHTML;
+}
+
+// ===== 終価 =====
+function calcFV() {
+  const pv = +document.getElementById('b1-pv').value;
+  const r  = +document.getElementById('b1-r').value / 100;
+  const n  = +document.getElementById('b1-n').value;
+  const coeff = Math.pow(1+r, n);
+  const fv = pv * coeff;
+  document.getElementById('b1-result').classList.add('show');
+  document.getElementById('b1-fv').textContent = fmtC(fv);
+  document.getElementById('b1-detail').innerHTML =
+    `終価係数：<span class="val">${fmtP(coeff)}</span><br>` +
+    `元本：<span class="val">${fmtC(pv)}</span>　　利息累計：<span class="val">${fmtC(fv-pv)}</span>　　将来価値：<span class="val">${fmtC(fv)}</span>`;
+}
+
+// ===== 現価 =====
+function calcPV() {
+  const fv = +document.getElementById('b2-fv').value;
+  const r  = +document.getElementById('b2-r').value / 100;
+  const n  = +document.getElementById('b2-n').value;
+  const coeff = 1 / Math.pow(1+r, n);
+  const pv = fv * coeff;
+  document.getElementById('b2-result').classList.add('show');
+  document.getElementById('b2-pv').textContent = fmtC(pv);
+  document.getElementById('b2-detail').innerHTML =
+    `現価係数：<span class="val">${fmtP(coeff)}</span><br>` +
+    `将来価値：<span class="val">${fmtC(fv)}</span>　　現在価値：<span class="val">${fmtC(pv)}</span>　　差額（割引）：<span class="val">${fmtC(fv-pv)}</span>`;
+}
+
+// ===== 年金終価 =====
+function calcAFV() {
+  const pmt = +document.getElementById('a1-pmt').value;
+  const r   = +document.getElementById('a1-r').value / 100;
+  const n   = +document.getElementById('a1-n').value;
+  const coeff = (Math.pow(1+r, n) - 1) / r;
+  const fv = pmt * coeff;
+  document.getElementById('a1-result').classList.add('show');
+  document.getElementById('a1-fv').textContent = fmtC(fv);
+  document.getElementById('a1-detail').innerHTML =
+    `年金終価係数：<span class="val">${fmtP(coeff)}</span><br>` +
+    `積立総額：<span class="val">${fmtC(pmt*n)}</span>　　利息分：<span class="val">${fmtC(fv-pmt*n)}</span>　　合計終価：<span class="val">${fmtC(fv)}</span>`;
+}
+
+// ===== 年金現価 =====
+function calcAPV() {
+  const pmt = +document.getElementById('a2-pmt').value;
+  const r   = +document.getElementById('a2-r').value / 100;
+  const n   = +document.getElementById('a2-n').value;
+  const coeff = (1 - Math.pow(1+r, -n)) / r;
+  const pv = pmt * coeff;
+  document.getElementById('a2-result').classList.add('show');
+  document.getElementById('a2-pv').textContent = fmtC(pv);
+  document.getElementById('a2-detail').innerHTML =
+    `年金現価係数：<span class="val">${fmtP(coeff)}</span><br>` +
+    `受取総額（名目）：<span class="val">${fmtC(pmt*n)}</span>　　現在価値：<span class="val">${fmtC(pv)}</span>`;
+}
+
+// ===== 年金現価（期首払い） =====
+function calcAPVdue() {
+  const pmt = +document.getElementById('a3-pmt').value;
+  const r   = +document.getElementById('a3-r').value / 100;
+  const n   = +document.getElementById('a3-n').value;
+  const coeff = (1 - Math.pow(1+r, -n)) / r * (1+r);
+  const pv = pmt * coeff;
+  document.getElementById('a3-result').classList.add('show');
+  document.getElementById('a3-pv').textContent = fmtC(pv);
+  document.getElementById('a3-detail').innerHTML =
+    `期首払い年金現価係数：<span class="val">${fmtP(coeff)}</span><br>` +
+    `通常の年金現価：<span class="val">${fmtC(pmt*(1-Math.pow(1+r,-n))/r)}</span>　　差分（+1期分の割引除去）：<span class="val">${fmtC(pv - pmt*(1-Math.pow(1+r,-n))/r)}</span>`;
+}
+
+// ===== 永続年金 =====
+function calcPerp() {
+  const pmt = +document.getElementById('a4-pmt').value;
+  const r   = +document.getElementById('a4-r').value / 100;
+  const pv = pmt / r;
+  document.getElementById('a4-result').classList.add('show');
+  document.getElementById('a4-pv').textContent = fmtC(pv);
+  document.getElementById('a4-detail').innerHTML =
+    `毎年 <span class="val">${fmtC(pmt)}</span> を永続して受取る場合の現在価値：<span class="val">${fmtC(pv)}</span>`;
+}
+
+// ===== 減債基金 =====
+function calcSinking() {
+  const fv = +document.getElementById('s1-fv').value;
+  const r  = +document.getElementById('s1-r').value / 100;
+  const n  = +document.getElementById('s1-n').value;
+  const coeff = r / (Math.pow(1+r, n) - 1);
+  const pmt = fv * coeff;
+  document.getElementById('s1-result').classList.add('show');
+  document.getElementById('s1-pmt').textContent = fmtC(pmt);
+  document.getElementById('s1-detail').innerHTML =
+    `減債基金係数：<span class="val">${fmtP(coeff)}</span><br>` +
+    `毎年積立：<span class="val">${fmtC(pmt)}</span>　×　<span class="val">${n}</span>年　=　積立総額 <span class="val">${fmtC(pmt*n)}</span>　（利息分 <span class="val">${fmtC(fv-pmt*n)}</span>）`;
+}
+
+// ===== 資本回収 =====
+function calcCapRec() {
+  const pv = +document.getElementById('s2-pv').value;
+  const r  = +document.getElementById('s2-r').value / 100;
+  const n  = +document.getElementById('s2-n').value;
+  const pown = Math.pow(1+r, n);
+  const coeff = r * pown / (pown - 1);
+  const pmt = pv * coeff;
+  document.getElementById('s2-result').classList.add('show');
+  document.getElementById('s2-pmt').textContent = fmtC(pmt);
+  document.getElementById('s2-detail').innerHTML =
+    `資本回収係数：<span class="val">${fmtP(coeff)}</span><br>` +
+    `返済総額：<span class="val">${fmtC(pmt*n)}</span>　　利息総額：<span class="val">${fmtC(pmt*n - pv)}</span>　　元本：<span class="val">${fmtC(pv)}</span>`;
+}
+
+// ===== ローン返済スケジュール =====
+function calcLoanSchedule() {
+  const pv0 = +document.getElementById('loan-pv').value;
+  const r   = +document.getElementById('loan-r').value / 100;
+  const n   = +document.getElementById('loan-n').value;
+  const pown = Math.pow(1+r, n);
+  const pmt = pv0 * r * pown / (pown - 1);
+
+  document.getElementById('loan-result').classList.add('show');
+  document.getElementById('loan-pmt').textContent = fmtC(pmt) + ' / 年';
+
+  let bal = pv0;
+  let rows = `<table>
+    <thead><tr>
+      <th>年</th><th>返済額</th><th>利息分</th><th>元本分</th><th>残高</th>
+    </tr></thead><tbody>`;
+
+  for (let i = 1; i <= n; i++) {
+    const interest = bal * r;
+    const principal = pmt - interest;
+    bal -= principal;
+    if (bal < 0.01) bal = 0;
+    rows += `<tr>
+      <td>${i}年目</td>
+      <td>${fmtC(pmt)}</td>
+      <td>${fmtC(interest)}</td>
+      <td>${fmtC(principal)}</td>
+      <td>${fmtC(bal)}</td>
+    </tr>`;
+  }
+  rows += '</tbody></table>';
+  document.getElementById('loan-table-wrap').innerHTML = rows;
+}
+
+// ===== 金利逆算 =====
+function calcRate() {
+  const pv = +document.getElementById('r1-pv').value;
+  const fv = +document.getElementById('r1-fv').value;
+  const n  = +document.getElementById('r1-n').value;
+  const r  = Math.pow(fv/pv, 1/n) - 1;
+  document.getElementById('r1-result').classList.add('show');
+  document.getElementById('r1-r').textContent = fmt(r*100, 4) + ' %';
+  document.getElementById('r1-detail').innerHTML =
+    `終価係数：<span class="val">${fmtP(Math.pow(1+r,n))}</span>　　実質年利：<span class="val">${fmt(r*100,4)}%</span>　　${n}年後：<span class="val">${fmtC(fv)}</span>`;
+}
+
+// ===== 期間逆算 =====
+function calcPeriod() {
+  const pv = +document.getElementById('r2-pv').value;
+  const fv = +document.getElementById('r2-fv').value;
+  const r  = +document.getElementById('r2-r').value / 100;
+  const n  = Math.log(fv/pv) / Math.log(1+r);
+  document.getElementById('r2-result').classList.add('show');
+  document.getElementById('r2-n').textContent = fmt(n, 2) + ' 年';
+  const yr = Math.floor(n), mo = Math.round((n-yr)*12);
+  document.getElementById('r2-detail').innerHTML =
+    `約 <span class="val">${yr}年 ${mo}ヶ月</span>　　72の法則による概算：<span class="val">${fmt(72/(r*100),1)}年</span>`;
+}
+
+// ===== 72の法則 =====
+function calc72() {
+  const r = +document.getElementById('r3-r').value / 100;
+  const approx = 72 / (r*100);
+  const exact  = Math.log(2) / Math.log(1+r);
+  document.getElementById('r3-result').classList.add('show');
+  document.getElementById('r3-n').textContent = fmt(approx, 1) + ' 年（概算）';
+  document.getElementById('r3-detail').innerHTML =
+    `72の法則：<span class="val">${fmt(approx,2)}年</span>　　精算値 log(2)/log(1+r)：<span class="val">${fmt(exact,2)}年</span>　　誤差：<span class="val">${fmt(Math.abs(approx-exact),3)}年</span>`;
+}
+
+// ===== 係数表 =====
+function calcTable() {
+  const r  = +document.getElementById('tbl-r').value / 100;
+  const n  = +document.getElementById('tbl-n').value;
+  const hl = +document.getElementById('tbl-hl').value;
+
+  let html = `<table>
+    <thead><tr>
+      <th>年数</th>
+      <th>終価係数<br><small>収穫係数</small></th>
+      <th>現価係数<br><small>減価係数</small></th>
+      <th>年金終価<br><small>係数</small></th>
+      <th>年金現価<br><small>係数</small></th>
+      <th>減債基金<br><small>係数</small></th>
+      <th>資本回収<br><small>係数</small></th>
+    </tr></thead><tbody>`;
+
+  for (let i = 1; i <= n; i++) {
+    const pown = Math.pow(1+r, i);
+    const c1 = pown;
+    const c2 = 1/pown;
+    const c3 = (pown-1)/r;
+    const c4 = (1-1/pown)/r;
+    const c5 = r/(pown-1);
+    const c6 = r*pown/(pown-1);
+    const cls = i === hl ? ' class="highlight-row"' : '';
+    html += `<tr${cls}>
+      <td>${i}年</td>
+      <td>${fmtP(c1)}</td>
+      <td>${fmtP(c2)}</td>
+      <td>${fmtP(c3)}</td>
+      <td>${fmtP(c4)}</td>
+      <td>${fmtP(c5)}</td>
+      <td>${fmtP(c6)}</td>
+    </tr>`;
+  }
+  html += '</tbody></table>';
+  document.getElementById('coeff-table').innerHTML = html;
+}
+
+// ===== タブ切替 =====
+function switchTab(id) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// 初期表示
+calcTable();
+</script>
+</body>
+</html>

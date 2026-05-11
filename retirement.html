@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>老後資金シミュレーター</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;600&family=Noto+Sans+JP:wght@300;400&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --orange:  #c2620a;
+    --orange2: #ea8c3a;
+    --orange3: #fff7ed;
+    --navy:    #1a2744;
+    --blue:    #2563a8;
+    --green:   #16a34a;
+    --red:     #dc2626;
+    --ink:     #1a2030;
+    --gray:    #6b7280;
+    --border:  #e2d9cc;
+    --bg:      #fdf8f4;
+    --white:   #ffffff;
+    --shadow:  rgba(26,20,10,0.1);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--ink); font-family: 'Noto Sans JP', sans-serif; font-weight: 300; min-height: 100vh; }
+
+  header {
+    background: linear-gradient(135deg, var(--navy) 0%, #2d3f6e 100%);
+    color: white; padding: 22px 32px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 50;
+  }
+  header h1 { font-family: 'Noto Serif JP', serif; font-size: 1.2rem; font-weight: 600; letter-spacing: 0.1em; }
+  header span { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: #7a9cc8; }
+
+  .container { max-width: 960px; margin: 0 auto; padding: 32px 20px 60px; }
+
+  .tabs { display: flex; gap: 2px; margin-bottom: 28px; background: var(--border); border-radius: 6px; padding: 3px; flex-wrap: wrap; }
+  .tab-btn { flex: 1; min-width: 120px; padding: 10px 8px; border: none; background: transparent; cursor: pointer; font-family: 'Noto Serif JP', serif; font-size: 0.82rem; color: var(--gray); border-radius: 4px; transition: all 0.2s; letter-spacing: 0.05em; }
+  .tab-btn.active { background: var(--navy); color: white; }
+  .tab-btn:hover:not(.active) { background: rgba(26,39,68,0.1); color: var(--navy); }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .card { background: var(--white); border: 1px solid var(--border); border-radius: 10px; padding: 28px; margin-bottom: 20px; box-shadow: 0 2px 8px var(--shadow); position: relative; overflow: hidden; }
+  .card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--orange), var(--orange2)); }
+  .card.blue::before { background: linear-gradient(90deg, var(--navy), var(--blue)); }
+  .card.green::before { background: linear-gradient(90deg, var(--green), #4ade80); }
+
+  .card-title { font-family: 'Noto Serif JP', serif; font-size: 1rem; font-weight: 600; letter-spacing: 0.08em; margin-bottom: 6px; color: var(--ink); }
+  .card-desc { font-size: 0.78rem; color: var(--gray); margin-bottom: 20px; line-height: 1.8; }
+
+  .example-box { background: var(--orange3); border-left: 3px solid var(--orange2); border-radius: 0 6px 6px 0; padding: 12px 16px; margin-bottom: 20px; font-size: 0.78rem; line-height: 1.8; color: #7c3a0a; }
+  .example-box strong { color: var(--orange); font-weight: 600; }
+
+  .input-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 18px; }
+  .field label { display: block; font-size: 0.72rem; letter-spacing: 0.06em; color: var(--gray); margin-bottom: 5px; }
+  .field input, .field select { width: 100%; padding: 9px 11px; border: 1px solid var(--border); border-radius: 5px; background: var(--bg); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--ink); outline: none; transition: border-color 0.2s; }
+  .field input:focus, .field select:focus { border-color: var(--orange2); background: white; }
+
+  .calc-btn { padding: 11px 28px; background: var(--navy); color: white; border: none; border-radius: 5px; font-family: 'Noto Serif JP', serif; font-size: 0.85rem; letter-spacing: 0.1em; cursor: pointer; transition: background 0.2s; }
+  .calc-btn:hover { background: var(--orange); }
+
+  .result-box { display: none; margin-top: 20px; }
+  .result-box.show { display: block; }
+
+  /* 資産寿命メーター */
+  .lifespan-box { border-radius: 10px; padding: 24px; margin-bottom: 16px; text-align: center; }
+  .lifespan-box.safe { background: #dcfce7; border: 2px solid #86efac; }
+  .lifespan-box.warn { background: #fef9c3; border: 2px solid #fde047; }
+  .lifespan-box.danger { background: #fee2e2; border: 2px solid #fca5a5; }
+  .lifespan-num { font-family: 'JetBrains Mono', monospace; font-size: 2.5rem; font-weight: 400; }
+  .lifespan-label { font-size: 0.8rem; color: var(--gray); margin-top: 4px; }
+
+  /* 概要グリッド */
+  .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .summary-card { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 14px; text-align: center; }
+  .summary-card .s-label { font-size: 0.68rem; color: var(--gray); margin-bottom: 4px; letter-spacing: 0.05em; }
+  .summary-card .s-val { font-family: 'JetBrains Mono', monospace; font-size: 1rem; color: var(--ink); }
+
+  /* 年齢バー */
+  .age-bar-wrap { margin: 20px 0; }
+  .age-bar-track { background: #e5e7eb; border-radius: 20px; height: 32px; position: relative; overflow: hidden; }
+  .age-bar-fill { height: 100%; border-radius: 20px; display: flex; align-items: center; padding: 0 12px; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: white; transition: width 0.8s ease; }
+  .age-bar-safe { background: linear-gradient(90deg, var(--green), #4ade80); }
+  .age-bar-warn { background: linear-gradient(90deg, var(--orange), var(--orange2)); }
+  .age-bar-danger { background: linear-gradient(90deg, var(--red), #f87171); }
+  .age-labels { display: flex; justify-content: space-between; font-size: 0.68rem; color: var(--gray); margin-top: 4px; font-family: 'JetBrains Mono', monospace; }
+
+  /* 推移テーブル */
+  .schedule-wrap { overflow-x: auto; margin-top: 16px; max-height: 300px; overflow-y: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
+  th { background: var(--navy); color: white; padding: 7px 10px; text-align: right; font-weight: 400; position: sticky; top: 0; }
+  th:first-child { text-align: center; }
+  td { padding: 6px 10px; text-align: right; border-bottom: 1px solid var(--bg); font-family: 'JetBrains Mono', monospace; }
+  td:first-child { text-align: center; font-family: 'Noto Sans JP', sans-serif; color: var(--gray); }
+  tr:hover td { background: var(--bg); }
+  tr.zero-row td { color: var(--red); font-weight: 600; }
+
+  .note { font-size: 0.7rem; color: var(--gray); margin-top: 10px; line-height: 1.7; }
+
+  /* 2000万問題 */
+  .mannen-box { background: #fef2f2; border: 2px solid #fca5a5; border-radius: 10px; padding: 20px; margin-bottom: 16px; }
+  .mannen-box .big { font-family: 'JetBrains Mono', monospace; font-size: 2rem; color: var(--red); }
+
+  @media (max-width: 600px) { header { padding: 16px 20px; } .card { padding: 18px; } }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>老後資金シミュレーター</h1>
+    <span>Retirement Planning Calculator</span>
+  </div>
+</header>
+
+<div class="container">
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('lifespan')">資産寿命シミュレーション</button>
+    <button class="tab-btn" onclick="switchTab('twoThousand')">老後2000万円問題</button>
+    <button class="tab-btn" onclick="switchTab('pension')">年金シミュレーション</button>
+  </div>
+
+  <!-- ====== 資産寿命 ====== -->
+  <div id="tab-lifespan" class="panel active">
+    <div class="card">
+      <div class="card-title">🌅 資産寿命シミュレーション</div>
+      <div class="example-box">
+        <strong>たとえば…</strong><br>
+        65歳で退職。貯金2,000万円あって、年金が月15万円、生活費が月25万円かかるとしたら？<br>
+        毎月10万円ずつ取り崩すと、<strong>貯金は何年で底をつくか</strong>を計算します。<br>
+        運用しながら取り崩す場合も試算できます。
+      </div>
+
+      <div class="input-grid">
+        <div class="field"><label>退職時の貯蓄額</label><input id="l-savings" type="number" value="20000000" step="500000"></div>
+        <div class="field"><label>退職年齢</label><input id="l-retire-age" type="number" value="65" step="1"></div>
+        <div class="field"><label>月の生活費</label><input id="l-expense" type="number" value="250000" step="10000"></div>
+        <div class="field"><label>月の年金受取額</label><input id="l-pension" type="number" value="150000" step="10000"></div>
+        <div class="field"><label>運用利率（%）</label><input id="l-rate" type="number" value="1" step="0.5"></div>
+        <div class="field"><label>想定寿命</label><input id="l-life" type="number" value="90" step="1"></div>
+      </div>
+
+      <button class="calc-btn" onclick="calcLifespan()">計算する</button>
+
+      <div id="lifespan-result" class="result-box">
+        <div id="lifespan-box"></div>
+        <div class="age-bar-wrap">
+          <div class="age-bar-track"><div class="age-bar-fill" id="age-bar" style="width:0%"></div></div>
+          <div class="age-labels"><span id="age-start">65歳</span><span id="age-end">90歳</span></div>
+        </div>
+        <div class="summary-grid" id="lifespan-summary"></div>
+        <div class="schedule-wrap" id="lifespan-table"></div>
+        <p class="note">※ 年金額・生活費・運用利率は変動する場合があります。あくまでシミュレーションです。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== 2000万問題 ====== -->
+  <div id="tab-twoThousand" class="panel">
+    <div class="card blue">
+      <div class="card-title">📰 老後2000万円問題とは？</div>
+      <div class="example-box" style="background:#eff6ff;border-color:#93c5fd;color:#1e3a5f;">
+        <strong>2019年に話題になった「老後2000万円問題」</strong><br>
+        金融庁の報告書が「夫婦で老後30年間に約2,000万円が不足する」と試算。<br>
+        あなたの場合はいくら必要か、<strong>自分の数字で確認</strong>してみましょう。
+      </div>
+
+      <div class="input-grid">
+        <div class="field"><label>月の生活費（老後）</label><input id="t-expense" type="number" value="250000" step="10000"></div>
+        <div class="field"><label>月の年金受取（夫婦合計）</label><input id="t-pension" type="number" value="220000" step="10000"></div>
+        <div class="field"><label>老後の期間（年）</label><input id="t-years" type="number" value="30" step="1"></div>
+        <div class="field"><label>現在の貯蓄額</label><input id="t-savings" type="number" value="10000000" step="500000"></div>
+        <div class="field"><label>現在の年齢</label><input id="t-age" type="number" value="45" step="1"></div>
+        <div class="field"><label>退職年齢</label><input id="t-retire" type="number" value="65" step="1"></div>
+        <div class="field"><label>毎月の積立額</label><input id="t-monthly" type="number" value="30000" step="5000"></div>
+        <div class="field"><label>運用利率（%）</label><input id="t-rate" type="number" value="3" step="0.5"></div>
+      </div>
+
+      <button class="calc-btn" onclick="calcTwoThousand()">試算する</button>
+
+      <div id="twoThousand-result" class="result-box">
+        <div id="tt-box"></div>
+        <div class="summary-grid" id="tt-summary"></div>
+        <p class="note">※ 2019年金融庁報告書は月5.5万円の赤字×20〜30年で1,300〜2,000万円と試算。実際は生活費・年金・寿命によって大きく異なります。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== 年金シミュレーション ====== -->
+  <div id="tab-pension" class="panel">
+    <div class="card green">
+      <div class="card-title">🏛️ 年金受取額の目安</div>
+      <div class="example-box" style="background:#dcfce7;border-color:#4ade80;color:#14532d;">
+        <strong>たとえば…</strong><br>
+        「自分は年金いくらもらえるんだろう？」<br>
+        平均的な収入と加入期間から、おおよその受取額を試算します。<br>
+        <strong>正確な金額はねんきん定期便またはねんきんネットで確認してください。</strong>
+      </div>
+
+      <div class="input-grid">
+        <div class="field"><label>職業</label>
+          <select id="pen-job">
+            <option value="company">会社員（厚生年金）</option>
+            <option value="self">自営業（国民年金のみ）</option>
+            <option value="part">パート・アルバイト（国民年金）</option>
+          </select>
+        </div>
+        <div class="field"><label>平均年収（万円）</label><input id="pen-income" type="number" value="500" step="50"></div>
+        <div class="field"><label>厚生年金加入期間（年）</label><input id="pen-years" type="number" value="35" step="1"></div>
+        <div class="field"><label>受取開始年齢</label>
+          <select id="pen-start">
+            <option value="60">60歳（繰り上げ・減額）</option>
+            <option value="61">61歳</option>
+            <option value="62">62歳</option>
+            <option value="63">63歳</option>
+            <option value="64">64歳</option>
+            <option value="65" selected>65歳（標準）</option>
+            <option value="66">66歳</option>
+            <option value="67">67歳</option>
+            <option value="68">68歳</option>
+            <option value="69">69歳</option>
+            <option value="70">70歳（繰り下げ・増額）</option>
+            <option value="75">75歳（最大繰り下げ・84%増）</option>
+          </select>
+        </div>
+      </div>
+
+      <button class="calc-btn" onclick="calcPension()">試算する</button>
+
+      <div id="pension-result" class="result-box">
+        <div id="pension-box"></div>
+        <div class="summary-grid" id="pension-summary"></div>
+        <p class="note">※ 概算試算です。実際の年金額は加入記録・標準報酬月額・配偶者の有無などにより異なります。正確な金額は「ねんきんネット」でご確認ください。</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const fmt  = (n) => Math.round(n).toLocaleString('ja-JP');
+const fmtC = (n) => '¥' + fmt(n);
+
+function switchTab(id) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ===== 資産寿命 =====
+function calcLifespan() {
+  const savings    = +document.getElementById('l-savings').value;
+  const retireAge  = +document.getElementById('l-retire-age').value;
+  const expense    = +document.getElementById('l-expense').value;
+  const pension    = +document.getElementById('l-pension').value;
+  const rate       = +document.getElementById('l-rate').value / 100 / 12;
+  const lifeAge    = +document.getElementById('l-life').value;
+
+  const monthlyDeficit = expense - pension;
+  let bal = savings;
+  let depletedAge = null;
+  let rows = '';
+
+  for (let age = retireAge; age <= 100; age++) {
+    const startBal = bal;
+    for (let m = 0; m < 12; m++) {
+      bal = bal * (1 + rate) - monthlyDeficit;
+      if (bal <= 0 && depletedAge === null) depletedAge = age;
+    }
+    const yearDef = monthlyDeficit * 12;
+    rows += `<tr class="${bal <= 0 ? 'zero-row' : ''}">
+      <td>${age}歳</td>
+      <td>${fmtC(monthlyDeficit)}/月</td>
+      <td>${fmtC(Math.max(0, bal))}</td>
+    </tr>`;
+    if (age > lifeAge && depletedAge !== null) break;
+  }
+
+  const lifeExpectancy = lifeAge - retireAge;
+  const safeAge = depletedAge || lifeAge + 1;
+  const pct = Math.min(100, ((safeAge - retireAge) / lifeExpectancy * 100));
+
+  let boxClass, icon, msg;
+  if (!depletedAge) {
+    boxClass = 'safe'; icon = '✅';
+    msg = `<strong>${lifeAge}歳まで資産が持ちます！</strong><br>想定寿命まで余裕があります。`;
+  } else if (depletedAge >= lifeAge) {
+    boxClass = 'warn'; icon = '⚠️';
+    msg = `<strong>${depletedAge}歳で資産が尽きます。</strong><br>想定寿命（${lifeAge}歳）ギリギリです。`;
+  } else {
+    boxClass = 'danger'; icon = '❌';
+    msg = `<strong>${depletedAge}歳で資産が尽きます。</strong><br>想定寿命より${lifeAge - depletedAge}年早く資産が底をつきます。`;
+  }
+
+  document.getElementById('lifespan-box').innerHTML = `
+    <div class="lifespan-box ${boxClass}">
+      <div style="font-size:1.5rem;margin-bottom:8px;">${icon}</div>
+      <div class="lifespan-num">${depletedAge ? depletedAge + '歳' : lifeAge + '歳以降'}</div>
+      <div class="lifespan-label">${msg}</div>
+    </div>`;
+
+  const barClass = boxClass === 'safe' ? 'age-bar-safe' : boxClass === 'warn' ? 'age-bar-warn' : 'age-bar-danger';
+  document.getElementById('age-bar').className = `age-bar-fill ${barClass}`;
+  document.getElementById('age-bar').style.width = pct + '%';
+  document.getElementById('age-bar').textContent = (depletedAge || lifeAge) + '歳';
+  document.getElementById('age-start').textContent = retireAge + '歳';
+  document.getElementById('age-end').textContent = lifeAge + '歳';
+
+  document.getElementById('lifespan-summary').innerHTML = `
+    <div class="summary-card"><div class="s-label">月の収支</div><div class="s-val" style="color:${monthlyDeficit>0?'var(--red)':'var(--green)'};">${monthlyDeficit>0?'−':'+'}${fmtC(Math.abs(monthlyDeficit))}</div></div>
+    <div class="summary-card"><div class="s-label">退職時貯蓄</div><div class="s-val">${fmtC(savings)}</div></div>
+    <div class="summary-card"><div class="s-label">月の生活費</div><div class="s-val">${fmtC(expense)}</div></div>
+    <div class="summary-card"><div class="s-label">月の年金</div><div class="s-val">${fmtC(pension)}</div></div>`;
+
+  document.getElementById('lifespan-table').innerHTML = `<table>
+    <thead><tr><th>年齢</th><th>月の収支</th><th>資産残高</th></tr></thead>
+    <tbody>${rows}</tbody></table>`;
+
+  document.getElementById('lifespan-result').classList.add('show');
+}
+
+// ===== 2000万問題 =====
+function calcTwoThousand() {
+  const expense  = +document.getElementById('t-expense').value;
+  const pension  = +document.getElementById('t-pension').value;
+  const years    = +document.getElementById('t-years').value;
+  const savings  = +document.getElementById('t-savings').value;
+  const age      = +document.getElementById('t-age').value;
+  const retire   = +document.getElementById('t-retire').value;
+  const monthly  = +document.getElementById('t-monthly').value;
+  const rate     = +document.getElementById('t-rate').value;
+
+  const deficit    = (expense - pension) * 12 * years;
+  const toRetire   = retire - age;
+
+  // 退職時の貯蓄（積立込み）
+  const r = rate / 12 / 100;
+  const n = toRetire * 12;
+  const fvSavings  = savings * Math.pow(1+r, n);
+  const fvMonthly  = monthly * (Math.pow(1+r,n)-1)/r*(1+r);
+  const totalAtRetire = fvSavings + fvMonthly;
+
+  const gap = deficit - totalAtRetire;
+
+  document.getElementById('tt-box').innerHTML = `
+    <div class="${gap>0?'mannen-box':'lifespan-box safe'}" style="margin-bottom:16px;">
+      <div style="font-size:1.2rem;margin-bottom:8px;">${gap>0?'❌':'✅'}</div>
+      <div class="${gap>0?'big':'lifespan-num'}">${fmtC(Math.abs(gap))}</div>
+      <div style="font-size:0.82rem;margin-top:8px;color:${gap>0?'var(--red)':'var(--green)'};">
+        ${gap>0 ? `老後資金が<strong>${fmtC(gap)}</strong>不足する見込みです。` : `老後資金は<strong>${fmtC(Math.abs(gap))}</strong>の余裕があります！`}
+      </div>
+    </div>`;
+
+  document.getElementById('tt-summary').innerHTML = `
+    <div class="summary-card"><div class="s-label">老後の月赤字</div><div class="s-val" style="color:var(--red);">${fmtC(expense-pension)}/月</div></div>
+    <div class="summary-card"><div class="s-label">老後に必要な総額</div><div class="s-val">${fmtC(deficit)}</div></div>
+    <div class="summary-card"><div class="s-label">退職時の見込み貯蓄</div><div class="s-val">${fmtC(totalAtRetire)}</div></div>
+    <div class="summary-card"><div class="s-label">毎月の積立効果</div><div class="s-val">${fmtC(fvMonthly)}</div></div>`;
+
+  document.getElementById('twoThousand-result').classList.add('show');
+}
+
+// ===== 年金試算 =====
+function calcPension() {
+  const job      = document.getElementById('pen-job').value;
+  const income   = +document.getElementById('pen-income').value;
+  const years    = +document.getElementById('pen-years').value;
+  const startAge = +document.getElementById('pen-start').value;
+
+  // 老齢基礎年金（満額2024年度：816,000円/年 ≒ 68,000円/月）
+  const basicFull = 816000;
+  const basicPension = job === 'company' ? basicFull : basicFull * Math.min(years, 40) / 40;
+
+  // 老齢厚生年金（報酬比例部分の簡易計算）
+  // 平均標準報酬月額 × 5.481/1000 × 加入月数（2003年以降の計算式）
+  const avgMonthly = income * 10000 / 12;
+  const kosei = job === 'company' ? avgMonthly * 0.005481 * years * 12 : 0;
+
+  const total65 = basicPension + kosei;
+  const monthly65 = total65 / 12;
+
+  // 繰り上げ・繰り下げ調整
+  let adjustRate = 1;
+  if (startAge < 65) {
+    adjustRate = 1 - 0.004 * (65 - startAge) * 12;
+  } else if (startAge > 65) {
+    adjustRate = 1 + 0.007 * (startAge - 65) * 12;
+  }
+  const adjustedMonthly = monthly65 * adjustRate;
+  const adjustedAnnual  = adjustedMonthly * 12;
+
+  const adjustPct = ((adjustRate - 1) * 100).toFixed(1);
+
+  document.getElementById('pension-box').innerHTML = `
+    <div class="lifespan-box safe" style="margin-bottom:16px;">
+      <div class="lifespan-num">${fmtC(Math.round(adjustedMonthly))}円/月</div>
+      <div class="lifespan-label">
+        ${startAge}歳から受取開始（65歳比${adjustRate>=1?'+':''}${adjustPct}%）<br>
+        年間 ${fmtC(Math.round(adjustedAnnual))}円
+      </div>
+    </div>`;
+
+  // 損益分岐点
+  const breakEvenMonths = startAge !== 65 ? Math.abs((monthly65 - adjustedMonthly) * (startAge < 65 ? -1 : 1)) > 0
+    ? Math.ceil(Math.abs(adjustedMonthly * (startAge - 65) * 12) / Math.abs(adjustedMonthly - monthly65))
+    : null : null;
+
+  document.getElementById('pension-summary').innerHTML = `
+    <div class="summary-card"><div class="s-label">老齢基礎年金（月）</div><div class="s-val">${fmtC(Math.round(basicPension/12))}</div></div>
+    ${job==='company'?`<div class="summary-card"><div class="s-label">老齢厚生年金（月）</div><div class="s-val">${fmtC(Math.round(kosei/12))}</div></div>`:''}
+    <div class="summary-card"><div class="s-label">65歳受取（月）</div><div class="s-val">${fmtC(Math.round(monthly65))}</div></div>
+    <div class="summary-card"><div class="s-label">${startAge}歳受取（月）</div><div class="s-val" style="color:var(--green);">${fmtC(Math.round(adjustedMonthly))}</div></div>
+    ${startAge!==65&&breakEvenMonths?`<div class="summary-card"><div class="s-label">損益分岐点</div><div class="s-val">${Math.floor(breakEvenMonths/12)}年${breakEvenMonths%12}ヶ月後</div></div>`:''}`;
+
+  document.getElementById('pension-result').classList.add('show');
+}
+</script>
+</body>
+</html>
